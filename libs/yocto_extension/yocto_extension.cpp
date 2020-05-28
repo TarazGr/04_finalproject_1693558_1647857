@@ -79,4 +79,22 @@ using math::zero4i;
 // -----------------------------------------------------------------------------
 namespace yocto::extension {
 
+float Np(float phi, int p, float s, float gammaO, float gammaT) {
+    float       dphi = phi - Phi(p, gammaO, gammaT);
+    while (dphi > pif) dphi -= 2 * pif;
+    while (dphi < -pif) dphi += 2 * pif;
+    return TrimmedLogistic(dphi, s, -pif, pif);
+}
+
+static float Mp(float cosThetaI, float cosThetaO, float sinThetaI,
+    float sinThetaO, float v) {
+    float a = cosThetaI * cosThetaO / v;
+    float b = sinThetaI * sinThetaO / v;
+    float mp =
+        (v <= .1)
+            ? (std::exp(LogI0(a) - b - 1 / v + 0.6931f + std::log(1 / (2 * v))))
+            : (std::exp(-b) * I0(a)) / (std::sinh(1 / v) * 2 * v);
+    return mp;
+    }
+
 }  // namespace yocto::pathtrace

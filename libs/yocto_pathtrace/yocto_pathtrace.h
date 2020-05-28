@@ -292,6 +292,13 @@ struct material {
   float opacity      = 1;
   bool  thin         = false;
 
+  //hair specific
+  float h      = 0;
+  float eta    = 0;
+  float beta_m = 0;
+  float beta_n = 0;
+  float alpha  = 0;
+
   // textures
   ptr::texture* emission_tex     = nullptr;
   ptr::texture* color_tex        = nullptr;

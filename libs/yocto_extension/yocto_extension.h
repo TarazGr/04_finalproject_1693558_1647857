@@ -75,6 +75,63 @@ using math::zero3f;
 // -----------------------------------------------------------------------------
 namespace yocto::extension {
 
+//for hair computations
+inline float safeSqrt(float x);
+inline float safeASin(float x);
+inline float Phi(int p, float gammaO, float gammaT);
+inline float Logistic(float x, float s);
+inline float LogisticCDF(float x, float s);
+inline float TrimmedLogistic(float x, float s, float a, float b);
+inline float I0(float x);
+inline float LogI0(float x);
+
+//General utility functions
+inline float safeSqrt(float x) { if(x >= -0.0001) return std::sqrt(std::max(float(0), x)); 
+    else return 0; };
+inline float safeASin(float x) { if(x >= -1.0001 && x <= 1.0001) return std::asin(yocto::math::clamp(x, -1.0, 1.0)); 
+    else return 0; }
+
+//for hair
+inline float Phi(int p, float gammaO, float gammaT) {
+    return 2 * p * gammaT - 2 * gammaO + p * yocto::math::pif;
+}
+
+inline float Logistic(float x, float s) {
+    x = std::abs(x);
+    return std::exp(-x / s) / (s * yocto::math::pow2(1 + std::exp(-x / s)));
+}
+
+inline float LogisticCDF(float x, float s) {
+    return 1 / (1 + std::exp(-x / s));
+}
+
+inline float TrimmedLogistic(float x, float s, float a, float b) {
+    return Logistic(x, s) / (LogisticCDF(b, s) - LogisticCDF(a, s));
+}
+
+inline float I0(float x) {
+    float   val   = 0;
+    float   x2i   = 1;
+    int64_t ifact = 1;
+    int     i4    = 1;
+    // I0(x) \approx Sum_i x^(2i) / (4^i (i!)^2)
+    for (int i = 0; i < 10; ++i) {
+        if (i > 1) ifact *= i;
+        val += x2i / (i4 * yocto::math::pow2(ifact));
+        x2i *= x * x;
+        i4 *= 4;
+    }
+    return val;
+}
+
+inline float LogI0(float x) {
+    if (x > 12)
+        return x + 0.5 * (-std::log(2 * yocto::math::pif) + std::log(1 / x) + 1 / (8 * x));
+    else
+        return std::log(I0(x));
+}
+
+
 }  // namespace yocto::pathtrace
 
 #endif
