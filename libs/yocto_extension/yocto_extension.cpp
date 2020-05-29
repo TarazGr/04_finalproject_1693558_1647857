@@ -33,6 +33,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <yocto_pathtrace/yocto_pathtrace.h>
 using namespace std::string_literals;
 
 
@@ -140,7 +141,7 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal, 
     }
 
 //⟨HairBSDF Method Definitions⟩ ≡
-hair HairBSDF(const yocto_p& material) {
+hair HairBSDF(const yocto::pathtrace::material* material) {
 
     auto hdata = hair{};
     hdata.h = material->h;
@@ -173,6 +174,7 @@ hair HairBSDF(const yocto_p& material) {
                 sin2kAlpha[i] = 2 * cos2kAlpha[i - 1] * sin2kAlpha[i - 1];
                 cos2kAlpha[i] = pow2(cos2kAlpha[i - 1]) - pow2(sin2kAlpha[i - 1]);
             }
+        return hdata;
     }
 
 

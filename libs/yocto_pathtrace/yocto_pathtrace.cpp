@@ -29,12 +29,14 @@
 #include "yocto_pathtrace.h"
 
 #include <yocto/yocto_shape.h>
+#include <yocto_extension/yocto_extension.h>
 
 #include <atomic>
 #include <deque>
 #include <future>
 #include <memory>
 #include <mutex>
+#include <yocto_extension\yocto_extension.cpp>
 using namespace std::string_literals;
 
 // -----------------------------------------------------------------------------
@@ -73,6 +75,14 @@ using math::zero3f;
 using math::zero3i;
 using math::zero4f;
 using math::zero4i;
+
+using extension::safeASin;
+using extension::LogI0;
+using extension::I0;
+using extension::Logistic;
+using extension::Phi;
+using extension::LogisticCDF;
+using extension::TrimmedLogistic;
 
 using yocto::shape::compute_normals;
 using yocto::shape::make_edge_map;
@@ -1213,7 +1223,7 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       //calculate hair brdf
       auto shape = object->shape;
       if (!shape->lines.empty()) {
-        auto hairBRDF = yocto_extention::HairBSDF(material->h);
+        auto hdata = yocto::extension::HairBSDF(object->material);
       }
 
       // handle opacity
