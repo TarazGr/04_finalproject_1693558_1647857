@@ -76,12 +76,12 @@ using math::zero3i;
 using math::zero4f;
 using math::zero4i;
 
-using extension::safeASin;
-using extension::LogI0;
 using extension::I0;
+using extension::LogI0;
 using extension::Logistic;
-using extension::Phi;
 using extension::LogisticCDF;
+using extension::Phi;
+using extension::safeASin;
 using extension::TrimmedLogistic;
 
 using yocto::shape::compute_normals;
@@ -355,13 +355,13 @@ struct brdf {
   float transmission_pdf = 0;
   float refraction_pdf   = 0;
 
-  //hair data
-  float h                = 0;
-  float gammaO           = 0;
-  float eta              = 0;
-  float beta_m           = 0;
-  float beta_n           = 0;
-  float alpha            = 0;
+  // hair data
+  float h      = 0;
+  float gammaO = 0;
+  float eta    = 0;
+  float beta_m = 0;
+  float beta_n = 0;
+  float alpha  = 0;
 };
 
 // Eval material to obatain emission, brdf and opacity.
@@ -1220,10 +1220,10 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       auto emission = eval_emission(object, element, uv, normal, outgoing);
       auto brdf     = eval_brdf(object, element, uv, normal, outgoing);
 
-      //calculate hair brdf
+      // calculate hair brdf
       auto shape = object->shape;
       if (!shape->lines.empty()) {
-        auto hdata = yocto::extension::HairBSDF(object->material);
+        auto hdata = yocto::extension::eval_hair(object->material);
       }
 
       // handle opacity
