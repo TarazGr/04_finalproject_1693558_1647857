@@ -35,11 +35,11 @@
 #include <mutex>
 using namespace std::string_literals;
 
+
 // -----------------------------------------------------------------------------
 // MATH FUNCTIONS
 // -----------------------------------------------------------------------------
 namespace yocto::extension {
-
 // import math symbols for use
 using math::abs;
 using math::acos;
@@ -59,6 +59,7 @@ using math::max;
 using math::min;
 using math::pif;
 using math::pow;
+using math::pow2;
 using math::sample_discrete_cdf;
 using math::sample_discrete_cdf_pdf;
 using math::sample_uniform;
@@ -78,6 +79,24 @@ using math::zero4i;
 // IMPLEMENTATION FOR EXTENSION
 // -----------------------------------------------------------------------------
 namespace yocto::extension {
+
+struct hair {
+    float h      = 0;
+    float gammaO = 0;
+    float eta    = 0;
+    float beta_m = 0;
+    float beta_n = 0;
+    float alpha  = 0;
+	vec3f sigma_a = {0,0,0};
+
+    float v[pMax + 1];
+
+    float s;
+
+    vec3f sin2kAlpha = {0,0,0};
+    vec3f cos2kAlpha = {0,0,0};
+};
+
 
 float Np(float phi, int p, float s, float gammaO, float gammaT) {
     float       dphi = phi - Phi(p, gammaO, gammaT);
@@ -119,6 +138,43 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal, 
 
     return ap;
     }
+
+//⟨HairBSDF Method Definitions⟩ ≡
+hair HairBSDF(const yocto_p& material) {
+
+    auto hdata = hair{};
+    hdata.h = material->h;
+    hdata.gammaO = safeASin(material->h); 
+    hdata.eta = material->eta;
+    hdata.sigma_a = material->color;
+    hdata.beta_m = material->beta_m;
+    hdata.beta_n = material->beta_n;
+    hdata.alpha = material->alpha;
+
+    auto v = hdata.v;
+    auto s = hdata.s;
+    auto sin2kAlpha = hdata.sin2kAlpha;
+    auto cos2kAlpha = hdata.cos2kAlpha;
+
+    //⟨Compute longitudinal variance from βm⟩ //roughness
+        v[0] = pow2(0.726f * material->beta_m + 0.812f * pow2(material->beta_m) + 3.7f * pow(material->beta_m,20));
+        v[1] = .25 * v[0];
+        v[2] = 4 * v[0];
+        for (int p = 3; p <= pMax; ++p)
+            v[p] = v[2];
+
+    //⟨Compute azimuthal logistic scale factor from βn⟩ 
+        s = SqrtPiOver8 * (0.265f * material->beta_n + 1.194f * pow2(material->beta_n) + 5.372f * pow(material->beta_n,22));
+
+    //⟨Compute α terms for hair scales⟩
+        sin2kAlpha[0] = std::sin(material->alpha);
+        cos2kAlpha[0] = SafeSqrt(1 - pow2(sin2kAlpha[0])); 
+        for (int i = 1; i < 3; ++i) {
+                sin2kAlpha[i] = 2 * cos2kAlpha[i - 1] * sin2kAlpha[i - 1];
+                cos2kAlpha[i] = pow2(cos2kAlpha[i - 1]) - pow2(sin2kAlpha[i - 1]);
+            }
+    }
+
 
 }  // namespace yocto::pathtrace
 

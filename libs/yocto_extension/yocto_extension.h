@@ -59,6 +59,7 @@ using math::identity3x4f;
 using math::ray3f;
 using math::rng_state;
 using math::vec2f;
+using math::vec3f;
 using math::vec2i;
 using math::vec3b;
 using math::vec3f;
@@ -73,13 +74,14 @@ using math::zero3f;
 // -----------------------------------------------------------------------------
 // HIGH LEVEL API
 // -----------------------------------------------------------------------------
+
 namespace yocto::extension {
 //⟨HairBSDF Constants⟩ ≡ 
 static const int pMax = 3;
 static const float SqrtPiOver8 = 0.626657069f;
 
 //for hair computations
-inline float safeSqrt(float x);
+inline float SafeSqrt(float x);
 inline float safeASin(float x);
 inline float Phi(int p, float gammaO, float gammaT);
 inline float Logistic(float x, float s);
@@ -89,7 +91,7 @@ inline float I0(float x);
 inline float LogI0(float x);
 
 //General utility functions
-inline float safeSqrt(float x) { if(x >= -0.0001) return std::sqrt(std::max(float(0), x)); 
+inline float SafeSqrt(float x) { if(x >= -0.0001) return std::sqrt(std::max(float(0), x)); 
     else return 0; };
 inline float safeASin(float x) { if(x >= -1.0001 && x <= 1.0001) return std::asin(yocto::math::clamp(x, -1.0, 1.0)); 
     else return 0; }
@@ -133,6 +135,7 @@ inline float LogI0(float x) {
     else
         return std::log(I0(x));
 }
+
 
 
 }  // namespace yocto::pathtrace

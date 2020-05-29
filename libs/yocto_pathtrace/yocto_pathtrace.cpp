@@ -344,6 +344,14 @@ struct brdf {
   float metal_pdf        = 0;
   float transmission_pdf = 0;
   float refraction_pdf   = 0;
+
+  //hair data
+  float h                = 0;
+  float gammaO           = 0;
+  float eta              = 0;
+  float beta_m           = 0;
+  float beta_n           = 0;
+  float alpha            = 0;
 };
 
 // Eval material to obatain emission, brdf and opacity.
@@ -1201,6 +1209,12 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       auto normal   = eval_shading_normal(object, element, uv, outgoing);
       auto emission = eval_emission(object, element, uv, normal, outgoing);
       auto brdf     = eval_brdf(object, element, uv, normal, outgoing);
+
+      //calculate hair brdf
+      auto shape = object->shape;
+      if (!shape->lines.empty()) {
+        auto hairBRDF = yocto_extention::HairBSDF(material->h);
+      }
 
       // handle opacity
       if (brdf.opacity < 1 && rand1f(rng) >= brdf.opacity) {
