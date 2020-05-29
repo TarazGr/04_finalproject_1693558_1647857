@@ -74,6 +74,9 @@ using math::zero3f;
 // HIGH LEVEL API
 // -----------------------------------------------------------------------------
 namespace yocto::extension {
+//⟨HairBSDF Constants⟩ ≡ 
+static const int pMax = 3;
+static const float SqrtPiOver8 = 0.626657069f;
 
 //for hair computations
 inline float safeSqrt(float x);

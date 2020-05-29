@@ -97,4 +97,28 @@ static float Mp(float cosThetaI, float cosThetaO, float sinThetaI,
     return mp;
     }
 
+static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging, float h, const vec3f &T) {
+    
+    std::array<vec3f, pMax + 1> ap;
+    //⟨Compute p = 0 attenuation at initial cylinder intersection⟩
+        //float cosGammaO = safeSqrt(1 - h * h);
+        //float cosTheta = cosThetaO * cosGammaO;
+        float f = yocto::math::fresnel_dielectric(eta, normal, outging);
+        //float f = FrDielectric(cosTheta, 1.f, eta);
+        ap[0] = {f, f, f}; //Spectrum
+
+    //⟨Compute p = 1 attenuation term⟩
+        ap[1] = yocto::math::pow2(1 - f) * T;
+
+    //⟨Compute attenuation terms up to p = pMax⟩
+        for (int p = 2; p < pMax; ++p)
+        ap[p] = ap[p - 1] * T * f;
+
+    //⟨Compute attenuation term accounting for remaining orders of scattering⟩ 
+        ap[pMax] = ap[pMax - 1] * f * T / (vec3f(1.f) - T * f);
+
+    return ap;
+    }
+
 }  // namespace yocto::pathtrace
+
