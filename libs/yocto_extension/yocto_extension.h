@@ -69,6 +69,11 @@ using math::vec4i;
 using math::zero2f;
 using math::zero3f;
 
+using math::pow2;
+using math::clamp;
+using math::pif;
+using math::max;
+
 }  // namespace yocto::extension
 
 // -----------------------------------------------------------------------------
@@ -98,7 +103,7 @@ struct hair {
 };
 
 inline float SafeSqrt(float x);
-inline float safeASin(float x);
+inline float SafeASin(float x);
 inline float Phi(int p, float gammaO, float gammaT);
 inline float Logistic(float x, float s);
 inline float LogisticCDF(float x, float s);
@@ -108,28 +113,28 @@ inline float LogI0(float x);
 
 inline float SafeSqrt(float x) {
   if (x >= -0.0001)
-    return std::sqrt(std::max(float(0), x));
+    return sqrt(max(float(0), x));
   else
     return 0;
 }
-inline float safeASin(float x) {
+inline float SafeASin(float x) {
   if (x >= -1.0001 && x <= 1.0001)
-    return std::asin(yocto::math::clamp(x, -1.0, 1.0));
+    return asin(clamp(x, -1.0, 1.0));
   else
     return 0;
 }
 
 inline float Phi(int p, float gammaO, float gammaT) {
-  return 2 * p * gammaT - 2 * gammaO + p * yocto::math::pif;
+  return 2 * p * gammaT - 2 * gammaO + p * pif;
 }
 
 inline float Logistic(float x, float s) {
-  x = std::abs(x);
-  return std::exp(-x / s) / (s * yocto::math::pow2(1 + std::exp(-x / s)));
+  x = abs(x);
+  return exp(-x / s) / (s * pow2(1 + exp(-x / s)));
 }
 
 inline float LogisticCDF(float x, float s) {
-  return 1 / (1 + std::exp(-x / s));
+  return 1 / (1 + exp(-x / s));
 }
 
 inline float TrimmedLogistic(float x, float s, float a, float b) {
@@ -152,7 +157,7 @@ inline float I0(float x) {
 
 inline float LogI0(float x) {
   if (x > 12)
-    return x + 0.5 * (-log(2 * yocto::math::pif) + log(1 / x) + 1 / (8 * x));
+    return x + 0.5 * (-log(2 * pif) + log(1 / x) + 1 / (8 * x));
   else
     return log(I0(x));
 }

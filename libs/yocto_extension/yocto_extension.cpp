@@ -117,10 +117,10 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal,
 }
 
 //⟨HairBSDF Method Definitions⟩ ≡
-hair eval_hair(const yocto::pathtrace::material* material) {
+hair hair_bsdf(const yocto::pathtrace::material* material) {
   auto hdata    = hair{};
   hdata.h       = material->h;
-  hdata.gammaO  = safeASin(material->h);
+  hdata.gammaO  = SafeASin(material->h);
   hdata.eta     = material->eta;
   hdata.sigma_a = material->color;
   hdata.beta_m  = material->beta_m;
@@ -152,6 +152,29 @@ hair eval_hair(const yocto::pathtrace::material* material) {
     cos2kAlpha[i] = pow2(cos2kAlpha[i - 1]) - pow2(sin2kAlpha[i - 1]);
   }
   return hdata;
+}
+
+vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming, const hair& bsdf) {
+  //Compute hair coordinate system terms related to wo
+  float sinThetaO = outgoing.x;
+  float cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
+  float phiO      = atan2(outgoing.z, outgoing.y);
+  //Compute hair coordinate system terms related to wi
+  float sinThetaI = incoming.x;
+  float cosThetaI = SafeSqrt(1 - pow2(sinThetaO));
+  float phiI      = atan2(incoming.z, incoming.y);
+  //Compute cos θt for refracted ray
+  float sinThetaT = sinThetaO / bsdf.eta;
+  float cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
+  // Compute γt for refracted ray
+  float etap      = std::sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  float sinGammaT = bsdf.h / etap;
+  float cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  float gammaT    = SafeASin(sinGammaT);
+  //Compute the transmittance T of a single path through the cylinder
+  vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
+  //Evaluate hair BSDF
+  return zero3f;
 }
 
 }  // namespace yocto::extension
