@@ -293,12 +293,10 @@ struct material {
   bool  thin         = false;
 
   //hair specific
-  //float h      = 0;
   float eta    = 0;
   float beta_m = 0;
   float beta_n = 0;
   float alpha  = 0;
-  vec3f sigma_a = {0,0,0};
   float v[3 + 1]; //pMax = 3
   float s;
   vec3f sin2kAlpha = {0,0,0};

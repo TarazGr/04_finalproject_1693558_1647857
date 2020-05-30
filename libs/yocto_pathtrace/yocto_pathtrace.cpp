@@ -28,15 +28,15 @@
 
 #include "yocto_pathtrace.h"
 
-#include <yocto/yocto_shape.h>
-#include <yocto_extension/yocto_extension.h>
+#include <yocto\yocto_shape.h>
+#include <yocto_extension\yocto_extension.h>
 
 #include <atomic>
 #include <deque>
 #include <future>
 #include <memory>
 #include <mutex>
-#include <yocto_extension/yocto_extension.cpp>
+#include <yocto_extension\yocto_extension.cpp>
 using namespace yocto::extension;
 using namespace std::string_literals;
 
@@ -1227,6 +1227,14 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
 
       // next direction
       auto incoming = zero3f;
+
+      if (!object->shape->lines.empty()) {
+        //incoming = sample_hair(hdata, normal, outgoing, rand2f(rng));
+        weight *= eval_hair(hdata, normal, outgoing,
+            incoming);  //
+                  //sample_hair_pdf(hdata, normal, outgoing, incoming);
+      }
+
       if (!is_delta(brdf)) {
         if (rand1f(rng) < 0.5f) {
           incoming = sample_brdfcos(
