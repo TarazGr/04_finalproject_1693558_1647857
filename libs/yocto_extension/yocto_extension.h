@@ -182,6 +182,12 @@ static vec2f DemuxFloat(float f) {
   uint32_t bits[2] = {Compact1By1(v), Compact1By1(v >> 1)};
   return {bits[0] / float(1 << 16), bits[1] / float(1 << 16)};
 }
+static float SampleTrimmedLogistic(float u, float s, float a, float b) {
+  float k = LogisticCDF(b, s) - LogisticCDF(a, s);
+  float x = -s * log(1 / (u * k + LogisticCDF(a, s)) - 1);
+  return clamp(x, a, b);
+}
+
 
 }  // namespace yocto::extension
 
