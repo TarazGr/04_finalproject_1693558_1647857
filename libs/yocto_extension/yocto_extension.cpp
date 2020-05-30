@@ -58,7 +58,7 @@ using math::log;
 using math::make_rng;
 using math::max;
 using math::min;
-using math::pi;
+//using math::pi;
 using math::pif;
 using math::pow;
 using math::pow2;
@@ -267,7 +267,7 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   u[1][0] = std::max(u[1][0], float(1e-5));
   float cosTheta = 1 + bsdf.v[p] * std::log(u[1][0] + (1 - u[1][0]) * std::exp(-2 / bsdf.v[p]));
   float sinTheta = SafeSqrt(1 - pow2(cosTheta));
-  float cosPhi = std::cos(2 * pi * u[1][1]);
+  float cosPhi = std::cos(2 * pif * u[1][1]);
   float sinThetaI = -cosTheta * sinThetaOp + sinTheta * cosPhi * cosThetaOp;
   float cosThetaI = SafeSqrt(1 - pow2(sinThetaI));
   // Sample Np to compute ∆φ
@@ -283,7 +283,37 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // Compute wi from sampled hair scattering angles
   float phiI = phiO + dphi;
   auto  incoming = vec3f{
-      sinThetaI, cosThetaI * cos(phiI), cosThetaI * sin(phiI)};
+    sinThetaI, cosThetaI * cos(phiI), cosThetaI * sin(phiI)};
   // Compute PDF for sampled hair scattering direction wi
+    auto pdf = 0;
+    for (int p = 0; p < pMax; ++p) {
+   // Compute sin θi and cos θi terms accounting for scales
+    float sinThetaIp, cosThetaIp;
+    if (p == 0) {
+      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y +
+                   cosThetaI * bsdf.sin2kAlpha.y;
+      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y -
+                   sinThetaI * bsdf.sin2kAlpha.y;
+    } else if (p == 1) {
+      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.x +
+                   cosThetaI * bsdf.sin2kAlpha.x;
+      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.x -
+                   sinThetaI * bsdf.sin2kAlpha.x;
+    } else if (p == 2) {
+      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.z +
+                   cosThetaI * bsdf.sin2kAlpha.z;
+      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.z -
+                   sinThetaI * bsdf.sin2kAlpha.z;
+    } else {
+      sinThetaIp = sinThetaI;
+      cosThetaIp = cosThetaI;
+    }
+    pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, bsdf.v[p]) * apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
+        
+  }
+    pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
+            apPdf[pMax] * (1 / (2 * pif));
+
+  return incoming;
 }
 }  // namespace yocto::extension

@@ -30,6 +30,7 @@
 
 #include <yocto/yocto_shape.h>
 #include <yocto_extension/yocto_extension.h>
+#include <yocto_extension/yocto_extension.cpp>
 
 #include <atomic>
 #include <deque>
