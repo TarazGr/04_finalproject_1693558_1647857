@@ -118,6 +118,31 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal,
   return ap;
 }
 
+std::array<float, pMax + 1> ComputeApPdf(float cosThetaO, const vec3f& outgoing, const vec3f& incoming, const vec3f& normal, 
+const hair& bsdf ) /*const*/ {
+	//⟨Compute array of Ap values for cosThetaO⟩
+  float sinThetaO = SafeSqrt(1 - cosThetaO * cosThetaO);
+	//⟨Compute cos θt for refracted ray⟩
+  float sinThetaT = sinThetaO / bsdf.eta;
+	float cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
+	//⟨Compute γt for refracted ray⟩
+  float etap      = std::sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  float sinGammaT = bsdf.h / etap;
+  float cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  float gammaT    = SafeASin(sinGammaT);
+	//⟨Compute the transmittance T of a single path through the cylinder ⟩
+  vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
+	std::array<vec3f, pMax + 1> ap =  Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
+	//⟨Compute Ap PDF from individual Ap terms⟩ 
+  //TODO: IMPLEMENTARE QUESTO
+  /*float sumY = std::accumulate(ap.begin(), ap.end(), float(0),
+        [](float s, const Spectrum &ap) { return s + ap.y(); });
+    for (int i = 0; i <= pMax; ++i)
+        apPdf[i] = ap[i].y() / sumY;
+	return apPdf;*/
+}
+
+
 //⟨HairBSDF Method Definitions⟩ ≡
 hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   auto hdata    = hair{};
