@@ -88,9 +88,8 @@ float Np(float phi, int p, float s, float gammaO, float gammaT) {
   while (dphi < -pif) dphi += 2 * pif;
   return TrimmedLogistic(dphi, s, -pif, pif);
 }
-
-static float Mp(float cosThetaI, float cosThetaO, float sinThetaI,
-    float sinThetaO, float v) {
+float Mp(float cosThetaI, float cosThetaO, float sinThetaI, float sinThetaO,
+    float v) {
   float a  = cosThetaI * cosThetaO / v;
   float b  = sinThetaI * sinThetaO / v;
   float mp = (v <= .1)
@@ -99,9 +98,9 @@ static float Mp(float cosThetaI, float cosThetaO, float sinThetaI,
   return mp;
 }
 
-static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal,
-    vec3f outging, float h, const vec3f& T) {
-  std::array<vec3f, pMax + 1> ap;
+std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
+    float h, const vec3f& T) {
+  std::vector<vec3f> ap = std::vector<vec3f>(pMax + 1);
   // Compute p = 0 attenuation at initial cylinder intersection
   // float cosGammaO = safeSqrt(1 - h * h);
   // float cosTheta = cosThetaO * cosGammaO;
@@ -117,32 +116,25 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal,
   return ap;
 }
 
-std::array<vec3f, pMax + 1> ComputeApPdf(float cosThetaO, const vec3f& outgoing,
-    const vec3f& incoming, const vec3f& normal, const hair& bsdf) /*const*/ {
-  //⟨Compute array of Ap values for cosThetaO⟩
+std::vector<float> ComputeApPdf(const hair& bsdf, float cosThetaO,
+    const vec3f& normal, const vec3f& outgoing) {
+  // Compute array of Ap values for cosThetaO
   float sinThetaO = SafeSqrt(1 - cosThetaO * cosThetaO);
-  //⟨Compute cos θt for refracted ray⟩
+  // Compute cos θt for refracted ray
   float sinThetaT = sinThetaO / bsdf.eta;
   float cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
-  //⟨Compute γt for refracted ray⟩
+  // Compute γt for refracted ray
   float etap = std::sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
   float sinGammaT = bsdf.h / etap;
   float cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
   float gammaT    = SafeASin(sinGammaT);
-  //⟨Compute the transmittance T of a single path through the cylinder ⟩
-  vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
-  std::array<vec3f, pMax + 1> ap = Ap(
-      cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
-  //⟨Compute Ap PDF from individual Ap terms⟩
-  // TODO: IMPLEMENTARE QUESTO
-  /*float sumY = std::accumulate(ap.begin(), ap.end(), float(0),
-        [](float s, const Spectrum &ap) { return s + ap.y(); });
-    for (int i = 0; i <= pMax; ++i)
-        apPdf[i] = ap[i].y() / sumY;
-        return apPdf;*/
-  return ap;
+  // Compute the transmittance T of a single path through the cylinder
+  vec3f              T  = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
+  std::vector<vec3f> ap = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
+  // Compute Ap PDF from individual Ap terms
+  std::vector<float> aPdf = std::vector<float>(pMax + 1);
+  return aPdf;
 }
-
 hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   auto hdata    = hair{};
   hdata.h       = -1 + 2 * uv.y;
@@ -198,10 +190,9 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // Compute the transmittance T of a single path through the cylinder
   vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
   // Evaluate hair BSDF
-  float                       phi = phiI - phiO;
-  std::array<vec3f, pMax + 1> ap  = Ap(
-      cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
-  vec3f fsum(0);  // calcola l'assoribimento //spectrum
+  float              phi = phiI - phiO;
+  std::vector<vec3f> ap  = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
+  vec3f              fsum(0);  // calcola l'assoribimento //spectrum
   for (int p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
     float sinThetaIp, cosThetaIp;
@@ -240,4 +231,36 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   return fsum;
 }
 
+vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
+    const vec2f& rng) {
+  // Compute hair coordinate system terms related to wo
+  float sinThetaO = outgoing.x;
+  float cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
+  float phiO      = atan2(outgoing.z, outgoing.y);
+  // Derive four random samples from u2
+  std::vector<vec2f> u = {DemuxFloat(rng.x), DemuxFloat(rng.y)};
+  // Determine which term p to sample for hair scattering
+  std::vector<float> apPdf = ComputeApPdf(bsdf, cosThetaO, normal, outgoing);
+  for (auto p = 0; p < pMax; ++p) {
+    if (u[0][0] < apPdf[p]) break;
+    u[0][0] -= apPdf[p];
+  }
+  // Sample Mp to compute θi
+  // MISSING
+  // Sample Np to compute ∆φ
+  float etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  float sinGammaT = bsdf.h / etap;
+  float cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  float gammaT    = SafeASin(sinGammaT);
+  float dphi;
+  if (p < pMax)
+    dphi = Phi(p, bsdf.gammaO, gammaT) + SampleTrimmedLogistic(u[0][1], bsdf.s, -pif, pif);
+  else
+    dphi = 2 * pif * u[0][1];
+  // Compute wi from sampled hair scattering angles
+  float phiI = phiO + dphi;
+  auto  incoming = vec3f{
+      sinThetaI, cosThetaI * cos(phiI), cosThetaI * sin(phiI)};
+  // Compute PDF for sampled hair scattering direction wi
+}
 }  // namespace yocto::extension

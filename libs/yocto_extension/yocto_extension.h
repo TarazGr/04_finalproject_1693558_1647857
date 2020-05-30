@@ -111,6 +111,7 @@ inline float TrimmedLogistic(float x, float s, float a, float b);
 inline float I0(float x);
 inline float LogI0(float x);
 
+
 inline float SafeSqrt(float x) {
   if (x >= -0.0001)
     return sqrt(max(float(0), x));

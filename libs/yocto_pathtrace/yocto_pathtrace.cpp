@@ -28,15 +28,14 @@
 
 #include "yocto_pathtrace.h"
 
-#include <yocto\yocto_shape.h>
-#include <yocto_extension\yocto_extension.h>
+#include <yocto/yocto_shape.h>
+#include <yocto_extension/yocto_extension.h>
 
 #include <atomic>
 #include <deque>
 #include <future>
 #include <memory>
 #include <mutex>
-#include <yocto_extension\yocto_extension.cpp>
 using namespace yocto::extension;
 using namespace std::string_literals;
 
