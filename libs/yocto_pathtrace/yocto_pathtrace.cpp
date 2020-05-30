@@ -36,7 +36,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#include <yocto_extension\yocto_extension.cpp>
+#include <yocto_extension/yocto_extension.cpp>
 using namespace yocto::extension;
 using namespace std::string_literals;
 
@@ -1212,7 +1212,7 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       auto normal   = eval_shading_normal(object, element, uv, outgoing);
       auto emission = eval_emission(object, element, uv, normal, outgoing);
       auto brdf     = eval_brdf(object, element, uv, normal, outgoing);
-      auto hdata    = hair_bsdf(object->material);
+      auto hdata    = hair_bsdf(object->material, uv);
 
       // handle opacity
       if (brdf.opacity < 1 && rand1f(rng) >= brdf.opacity) {

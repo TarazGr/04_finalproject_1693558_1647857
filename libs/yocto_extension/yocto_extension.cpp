@@ -73,6 +73,8 @@ using math::zero3f;
 using math::zero3i;
 using math::zero4f;
 using math::zero4i;
+using math::pi;
+using math::abs;
 
 }  // namespace yocto::extension
 
@@ -117,44 +119,45 @@ static std::array<vec3f, pMax + 1> Ap(float cosThetaO, float eta, vec3f normal,
 }
 
 //⟨HairBSDF Method Definitions⟩ ≡
-hair hair_bsdf(const yocto::pathtrace::material* material) {
+hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   auto hdata    = hair{};
-  hdata.h       = material->h;
-  hdata.gammaO  = SafeASin(material->h);
+  hdata.h       =  -1 + 2 * uv.y;
+  hdata.gammaO  = SafeASin(hdata.h);
   hdata.eta     = material->eta;
   hdata.sigma_a = material->color;
   hdata.beta_m  = material->beta_m;
   hdata.beta_n  = material->beta_n;
   hdata.alpha   = material->alpha;
 
-  auto v          = std::vector<float>(pMax + 1);
+  //since these values must be saved and used later, we use directy the ones in hdata
+  /*auto v          = std::vector<float>(pMax + 1);
   auto s          = 0;
   auto sin2kAlpha = zero3f;
-  auto cos2kAlpha = zero3f;
+  auto cos2kAlpha = zero3f;*/
 
   //⟨Compute longitudinal variance from βm⟩ //roughness
-  v[0] = pow2(0.726f * material->beta_m + 0.812f * pow2(material->beta_m) +
+  hdata.v[0] = pow2(0.726f * material->beta_m + 0.812f * pow2(material->beta_m) +
               3.7f * pow(material->beta_m, 20));
-  v[1] = .25 * v[0];
-  v[2] = 4 * v[0];
-  for (int p = 3; p <= pMax; ++p) v[p] = v[2];
+  hdata.v[1] = .25 * hdata.v[0];
+  hdata.v[2] = 4 * hdata.v[0];
+  for (int p = 3; p <= pMax; ++p) hdata.v[p] = hdata.v[2];
 
   //⟨Compute azimuthal logistic scale factor from βn⟩
-  s = SqrtPiOver8 *
+  hdata.s = SqrtPiOver8 *
       (0.265f * material->beta_n + 1.194f * pow2(material->beta_n) +
           5.372f * pow(material->beta_n, 22));
 
   //⟨Compute α terms for hair scales⟩
-  sin2kAlpha[0] = sin(material->alpha);
-  cos2kAlpha[0] = SafeSqrt(1 - pow2(sin2kAlpha[0]));
+  hdata.sin2kAlpha[0] = sin(material->alpha);
+  hdata.cos2kAlpha[0] = SafeSqrt(1 - pow2(hdata.sin2kAlpha[0]));
   for (int i = 1; i < 3; ++i) {
-    sin2kAlpha[i] = 2 * cos2kAlpha[i - 1] * sin2kAlpha[i - 1];
-    cos2kAlpha[i] = pow2(cos2kAlpha[i - 1]) - pow2(sin2kAlpha[i - 1]);
+    hdata.sin2kAlpha[i] = 2 * hdata.cos2kAlpha[i - 1] * hdata.sin2kAlpha[i - 1];
+    hdata.cos2kAlpha[i] = pow2(hdata.cos2kAlpha[i - 1]) - pow2(hdata.sin2kAlpha[i - 1]);
   }
   return hdata;
 }
 
-vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming, const hair& bsdf) {
+vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming,const vec3f& normal, const hair& bsdf) {
   //Compute hair coordinate system terms related to wo
   float sinThetaO = outgoing.x;
   float cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
@@ -174,6 +177,41 @@ vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming, const hair& bsdf) 
   //Compute the transmittance T of a single path through the cylinder
   vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
   //Evaluate hair BSDF
+  float phi = phiI - phiO; 
+  std::array<vec3f, pMax + 1> ap = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T); 
+  vec3f fsum(0.); //calcola l'assoribimento //spectrum
+  for (int p = 0; p < pMax; ++p) {
+
+    //⟨Compute sin θi and cos θi terms accounting for scales⟩
+      float sinThetaIp, cosThetaIp;
+      if (p == 0) {
+              sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y + cosThetaI * bsdf.sin2kAlpha.y;
+              cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y - sinThetaI * bsdf.sin2kAlpha.y;
+          }
+      //⟨Handle remainder of p values for hair scale tilt⟩ 
+      //WARNING: nel codice di prbt sinTethaIp e' chiamato sinTethaOp, nonostante nel paper sia il primo
+        else if (p == 1) {
+            sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y + cosThetaI * bsdf.sin2kAlpha.y;
+            cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y - sinThetaI * bsdf.sin2kAlpha.y;
+        } else if (p == 2) {
+            sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y + cosThetaI * bsdf.sin2kAlpha.y;
+            cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y - sinThetaI * bsdf.sin2kAlpha.y;
+        } else {
+            sinThetaIp = sinThetaI;
+            cosThetaIp = cosThetaI;
+        }
+      //⟨Handle out-of-range cos θi from scale adjustment⟩
+        cosThetaIp = std::abs(cosThetaIp);
+    fsum += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, bsdf.v[p]) * ap[p] * Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
+  }
+  //⟨Compute contribution of remaining terms after pMax⟩ 
+      fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
+            ap[pMax] / (2.f * pi);
+
+  //WARNING: calcolare il AbscosTheta di wi. Per ora ho deciso che e' l'absolute value di cosThetaI, ma sono in dubbio
+  //if (AbsCosTheta(wi) > 0) fsum /= AbsCosTheta(wi); 
+  if (abs(cosThetaI) > 0) fsum /= abs(cosThetaI);
+  return fsum;
   return zero3f;
 }
 

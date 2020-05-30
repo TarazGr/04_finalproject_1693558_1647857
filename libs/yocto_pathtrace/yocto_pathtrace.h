@@ -293,7 +293,7 @@ struct material {
   bool  thin         = false;
 
   //hair specific
-  float h      = 0;
+  //float h      = 0;
   float eta    = 0;
   float beta_m = 0;
   float beta_n = 0;
