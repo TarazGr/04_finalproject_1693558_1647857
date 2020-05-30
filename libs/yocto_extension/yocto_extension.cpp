@@ -241,7 +241,7 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   std::vector<vec2f> u = {DemuxFloat(rng.x), DemuxFloat(rng.y)};
   // Determine which term p to sample for hair scattering
   std::vector<float> apPdf = ComputeApPdf(bsdf, cosThetaO, normal, outgoing);
-  int p;
+  int                p;
   for (p = 0; p < pMax; ++p) {
     if (u[0][0] < apPdf[p]) break;
     u[0][0] -= apPdf[p];
@@ -249,18 +249,23 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // Rotate $\sin \thetao$ and $\cos \thetao$ to account for hair scale tilt
   float sinThetaOp, cosThetaOp;
   if (p == 0) {
-      sinThetaOp = sinThetaO * bsdf.cos2kAlpha[1] - cosThetaO * bsdf.sin2kAlpha[1];
-      cosThetaOp = cosThetaO * bsdf.cos2kAlpha[1] + sinThetaO * bsdf.sin2kAlpha[1];
-  }
-  else if (p == 1) {
-      sinThetaOp = sinThetaO * bsdf.cos2kAlpha[0] + cosThetaO * bsdf.sin2kAlpha[0];
-      cosThetaOp = cosThetaO * bsdf.cos2kAlpha[0] - sinThetaO * bsdf.sin2kAlpha[0];
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha[1] -
+                 cosThetaO * bsdf.sin2kAlpha[1];
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha[1] +
+                 sinThetaO * bsdf.sin2kAlpha[1];
+  } else if (p == 1) {
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha[0] +
+                 cosThetaO * bsdf.sin2kAlpha[0];
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha[0] -
+                 sinThetaO * bsdf.sin2kAlpha[0];
   } else if (p == 2) {
-      sinThetaOp = sinThetaO * bsdf.cos2kAlpha[2] + cosThetaO * bsdf.sin2kAlpha[2];
-      cosThetaOp = cosThetaO * bsdf.cos2kAlpha[2] - sinThetaO * bsdf.sin2kAlpha[2];
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha[2] +
+                 cosThetaO * bsdf.sin2kAlpha[2];
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha[2] -
+                 sinThetaO * bsdf.sin2kAlpha[2];
   } else {
-      sinThetaOp = sinThetaO;
-      cosThetaOp = cosThetaO;
+    sinThetaOp = sinThetaO;
+    cosThetaOp = cosThetaO;
   }
   // Sample Mp to compute θi
     //taken from https://github.com/mmp/pbrt-v3/blob/master/src/materials/hair.cpp
@@ -277,11 +282,12 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   float gammaT    = SafeASin(sinGammaT);
   float dphi;
   if (p < pMax)
-    dphi = Phi(p, bsdf.gammaO, gammaT) + SampleTrimmedLogistic(u[0][1], bsdf.s, -pif, pif);
+    dphi = Phi(p, bsdf.gammaO, gammaT) +
+           SampleTrimmedLogistic(u[0][1], bsdf.s, -pif, pif);
   else
     dphi = 2 * pif * u[0][1];
   // Compute wi from sampled hair scattering angles
-  float phiI = phiO + dphi;
+  float phiI     = phiO + dphi;
   auto  incoming = vec3f{
     sinThetaI, cosThetaI * cos(phiI), cosThetaI * sin(phiI)};
   // Compute PDF for sampled hair scattering direction wi
