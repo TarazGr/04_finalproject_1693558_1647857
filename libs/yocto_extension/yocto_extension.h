@@ -157,7 +157,7 @@ inline float I0(float x) {
 
 inline float LogI0(float x) {
   if (x > 12)
-    return x + 0.5f * (-log(2.0f * pif) + log(1.0f / x) + 1.0f / (8.0f * x));
+    return x + 0.5 * (-log(2 * pif) + log(1 / x) + 1 / (8 * x));
   else
     return log(I0(x));
 }

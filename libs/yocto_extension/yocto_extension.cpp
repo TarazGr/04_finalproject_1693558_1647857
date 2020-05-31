@@ -95,7 +95,10 @@ float Mp(float cosThetaI, float cosThetaO, float sinThetaI, float sinThetaO,
   auto b  = sinThetaI * sinThetaO / v;
   auto mp = (v <= .1) ? (exp(LogI0(a) - b - 1 / v + 0.6931f + log(1 / (2 * v))))
                       : (exp(-b) * I0(a)) / (sinh(1 / v) * 2 * v);
-  return mp;
+  if (!isinf(mp) && !isnan(mp))
+    return mp;
+  else
+    return 0;
 }
 
 std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
@@ -113,6 +116,8 @@ std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
   for (auto p = 2; p < pMax; p++) ap.push_back(ap[p - 1] * T * f);
   // Compute attenuation term accounting for remaining orders of scattering
   ap.push_back(ap[pMax - 1] * f * T / (vec3f{1} - T * f));
+  for (auto p : ap) printf("ap.x=%f, ap.x=%f, ap.z=%f\n", p.x, p.y, p.z);
+  printf("\n");
   return ap;
 }
 
@@ -276,6 +281,8 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
     cosThetaOp = abs(cosThetaOp);
     fsum += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
             ap[p] * Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
+    /*printf(
+        "p=%d\nfsum.x=%f\nfsum.y=%f\nfsum.z=%f\n", p, fsum.x, fsum.y, fsum.z);*/
   }
   // Compute contribution of remaining terms after pMax
   fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *

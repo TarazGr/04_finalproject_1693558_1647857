@@ -1228,9 +1228,9 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       auto incoming = zero3f;
 
       if (!object->shape->lines.empty()) {
-        incoming = sample_hair(bsdf, normal, outgoing, rand2f(rng));
-        /*weight *= eval_hair(bsdf, normal, outgoing, incoming) /
-                  sample_hair_pdf(bsdf, normal, outgoing, incoming);*/
+        incoming = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
+        weight *= eval_hair(bsdf, normal, outgoing, incoming) /
+                  sample_hair_pdf(bsdf, normal, outgoing, incoming);
       } else if (!is_delta(brdf)) {
         if (rand1f(rng) < 0.5f) {
           incoming = sample_brdfcos(
