@@ -96,7 +96,7 @@ struct hair {
 
   std::vector<float> v = std::vector<float>();
 
-  float s = 0;
+  float s = 0.0;
 
   vec3f sin2kAlpha = zero3f;
   vec3f cos2kAlpha = zero3f;
