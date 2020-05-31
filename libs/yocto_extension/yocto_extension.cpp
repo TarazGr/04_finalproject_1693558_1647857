@@ -199,24 +199,24 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   auto hdata    = hair();
   hdata.h       = -1 + 2 * uv.y;
   hdata.gammaO  = SafeASin(hdata.h);
-  hdata.eta     = material->eta;
+  hdata.eta     = 1.0f;
   hdata.sigma_a = material->color;
-  hdata.beta_m  = material->beta_m;
-  hdata.beta_n  = material->beta_n;
-  hdata.alpha   = material->alpha;
+  hdata.beta_m  = 0.25f;
+  hdata.beta_n  = 0.3f;
+  hdata.alpha   = 2.0f;
   //⟨Compute longitudinal variance from βm⟩ //roughness
   hdata.v.push_back(
-      pow2(0.726f * material->beta_m + 0.812f * pow2(material->beta_m) +
-           3.7f * pow(material->beta_m, 20)));
+      pow2(0.726f * 0.25f + 0.812f * pow2(0.25f) +
+           3.7f * pow(0.25f, 20)));
   hdata.v.push_back(.25f * hdata.v[0]);
   hdata.v.push_back(4.0f * hdata.v[0]);
   for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
   //⟨Compute azimuthal logistic scale factor from βn⟩
   hdata.s = SqrtPiOver8 *
-            (0.265f * material->beta_n + 1.194f * pow2(material->beta_n) +
-                5.372f * pow(material->beta_n, 22));
+            (0.265f * 0.3f + 1.194f * pow2(0.3f) +
+                5.372f * pow(0.3f, 22));
   //⟨Compute α terms for hair scales⟩
-  hdata.sin2kAlpha.x = sin(material->alpha * pif / 180.0f);
+  hdata.sin2kAlpha.x = sin(2.0f * pif / 180.0f);
   hdata.cos2kAlpha.x = SafeSqrt(1 - pow2(hdata.sin2kAlpha.x));
   for (auto i = 1; i < 3; i++) {
     hdata.sin2kAlpha[i] = 2 * hdata.cos2kAlpha[i - 1] * hdata.sin2kAlpha[i - 1];
