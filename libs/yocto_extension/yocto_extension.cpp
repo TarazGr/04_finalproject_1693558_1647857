@@ -135,10 +135,15 @@ std::vector<float> ComputeApPdf(const hair& bsdf, float cosThetaO,
   // Compute Ap PDF from individual Ap terms
   std::vector<float> apPdf = std::vector<float>(pMax + 1);
   //std::array<float, pMax + 1> apPdf;
-	/*float sumY = std::accumulate(ap.begin(), ap.end(), float(0), [](float bsdf.s, const vec3f &ap)
-   { return bsdf.s + ap.y(); });
+  float sumY = 0;
+  auto first = ap.begin();
+  auto last = ap.end();
+  while (first!=last) {
+    sumY = sumY + (bsdf.s + (*first).y);
+    ++first;
+  }
   for (int i = 0; i <= pMax; ++i)
-      apPdf[i] = ap[i].y / sumY;*/
+      apPdf[i] = ap[i].y / sumY;
 	return apPdf;
 }
 
