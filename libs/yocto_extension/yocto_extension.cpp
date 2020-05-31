@@ -93,9 +93,8 @@ float Mp(float cosThetaI, float cosThetaO, float sinThetaI, float sinThetaO,
     float v) {
   auto a  = cosThetaI * cosThetaO / v;
   auto b  = sinThetaI * sinThetaO / v;
-  auto mp = (v <= .1)
-                 ? (exp(LogI0(a) - b - 1 / v + 0.6931f + log(1 / (2 * v))))
-                 : (exp(-b) * I0(a)) / (sinh(1 / v) * 2 * v);
+  auto mp = (v <= .1) ? (exp(LogI0(a) - b - 1 / v + 0.6931f + log(1 / (2 * v))))
+                      : (exp(-b) * I0(a)) / (sinh(1 / v) * 2 * v);
   return mp;
 }
 
@@ -107,13 +106,13 @@ std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
   // float cosTheta = cosThetaO * cosGammaO;
   auto f = fresnel_dielectric(eta, normal, outging);
   // float f = FrDielectric(cosTheta, 1.f, eta);
-  ap[0] = vec3f{f};  // Spectrum
+  ap.push_back(vec3f{f});  // Spectrum
   // Compute p = 1 attenuation term
-  ap[1] = pow2(1 - f) * T;
+  ap.push_back(pow2(1 - f) * T);
   // Compute attenuation terms up to p = pMax
-  for (auto p = 2; p < pMax; p++) ap[p] = ap[p - 1] * T * f;
+  for (auto p = 2; p < pMax; p++) ap.push_back(ap[p - 1] * T * f);
   // Compute attenuation term accounting for remaining orders of scattering
-  ap[pMax] = ap[pMax - 1] * f * T / (vec3f{1} - T * f);
+  ap.push_back(ap[pMax - 1] * f * T / (vec3f{1} - T * f));
   return ap;
 }
 
@@ -125,17 +124,17 @@ std::vector<float> ComputeApPdf(const hair& bsdf, float cosThetaO,
   auto sinThetaT = sinThetaO / bsdf.eta;
   auto cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
   // Compute γt for refracted ray
-  auto etap = std::sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
   auto sinGammaT = bsdf.h / etap;
   auto cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
   // Compute the transmittance T of a single path through the cylinder
   auto               T  = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
   std::vector<vec3f> ap = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
   // Compute Ap PDF from individual Ap terms
-  std::vector<float> apPdf = std::vector<float>();
-  auto sumY  = 0;
-  auto  first = ap.begin();
-  auto  last  = ap.end();
+  std::vector<float> apPdf = std::vector<float>(pMax + 1);
+  auto               sumY  = 0;
+  auto               first = ap.begin();
+  auto               last  = ap.end();
   while (first != last) {
     sumY += (bsdf.s + (*first).y);
     ++first;
@@ -160,8 +159,8 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
   auto gammaT    = SafeASin(sinGammaT);
 
   std::vector<float> apPdf = ComputeApPdf(bsdf, cosThetaO, normal, outgoing);
-  auto              phi   = phiI - phiO;
-  auto              pdf   = 0;
+  auto               phi   = phiI - phiO;
+  auto               pdf   = 0;
   for (auto p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
     float sinThetaOp, cosThetaOp;
@@ -173,7 +172,7 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
     }
     // Handle remainder of p values for hair scale tilt
     else if (p == 1) {
-      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x+
+      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x +
                    cosThetaO * bsdf.sin2kAlpha.x;
       cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x -
                    sinThetaO * bsdf.sin2kAlpha.x;
@@ -188,8 +187,8 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
     }
     // Handle out-of-range cos θi from scale adjustment
     cosThetaOp = abs(cosThetaOp);
-    pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) * apPdf[p] *
-           Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
+    pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
+           apPdf[p] * Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
   }
   pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
          apPdf[pMax] * (1 / (2 * pif));
@@ -197,7 +196,7 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
 }
 
 hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
-  auto hdata    = hair{};
+  auto hdata    = hair();
   hdata.h       = -1 + 2 * uv.y;
   hdata.gammaO  = SafeASin(hdata.h);
   hdata.eta     = material->eta;
@@ -205,23 +204,20 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.beta_m  = material->beta_m;
   hdata.beta_n  = material->beta_n;
   hdata.alpha   = material->alpha;
-
   //⟨Compute longitudinal variance from βm⟩ //roughness
-  hdata.v[0] = pow2(0.726f * material->beta_m +
-                    0.812f * pow2(material->beta_m) +
-                    3.7f * pow(material->beta_m, 20));
-  hdata.v[1] = .25 * hdata.v[0];
-  hdata.v[2] = 4 * hdata.v[0];
-  for (auto p = 3; p <= pMax; p++) hdata.v[p] = hdata.v[2];
-
+  hdata.v.push_back(
+      pow2(0.726f * material->beta_m + 0.812f * pow2(material->beta_m) +
+           3.7f * pow(material->beta_m, 20)));
+  hdata.v.push_back(.25f * hdata.v[0]);
+  hdata.v.push_back(4.0f * hdata.v[0]);
+  for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
   //⟨Compute azimuthal logistic scale factor from βn⟩
   hdata.s = SqrtPiOver8 *
             (0.265f * material->beta_n + 1.194f * pow2(material->beta_n) +
                 5.372f * pow(material->beta_n, 22));
-
   //⟨Compute α terms for hair scales⟩
-  hdata.sin2kAlpha[0] = sin(material->alpha * pif / 180);
-  hdata.cos2kAlpha[0] = SafeSqrt(1 - pow2(hdata.sin2kAlpha[0]));
+  hdata.sin2kAlpha.x = sin(material->alpha * pif / 180.0f);
+  hdata.cos2kAlpha.x = SafeSqrt(1 - pow2(hdata.sin2kAlpha.x));
   for (auto i = 1; i < 3; i++) {
     hdata.sin2kAlpha[i] = 2 * hdata.cos2kAlpha[i - 1] * hdata.sin2kAlpha[i - 1];
     hdata.cos2kAlpha[i] = pow2(hdata.cos2kAlpha[i - 1]) -
@@ -249,11 +245,11 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   auto cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
   auto gammaT    = SafeASin(sinGammaT);
   // Compute the transmittance T of a single path through the cylinder
-  vec3f T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
+  auto T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
   // Evaluate hair BSDF
-  auto              phi = phiI - phiO;
+  auto               phi = phiI - phiO;
   std::vector<vec3f> ap  = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
-  vec3f              fsum = zero3f;  // calcola l'assoribimento //spectrum
+  auto               fsum = zero3f;  // calcola l'assoribimento //spectrum
   for (auto p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
     float sinThetaOp, cosThetaOp;
@@ -306,20 +302,14 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // Rotate sin θo and cos θo to account for hair scale tilt
   float sinThetaOp, cosThetaOp;
   if (p == 0) {
-    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y -
-                 cosThetaO * bsdf.sin2kAlpha.y;
-    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y +
-                 sinThetaO * bsdf.sin2kAlpha.y;
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y - cosThetaO * bsdf.sin2kAlpha.y;
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y + sinThetaO * bsdf.sin2kAlpha.y;
   } else if (p == 1) {
-    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x +
-                 cosThetaO * bsdf.sin2kAlpha.x;
-    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x -
-                 sinThetaO * bsdf.sin2kAlpha.x;
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x + cosThetaO * bsdf.sin2kAlpha.x;
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x - sinThetaO * bsdf.sin2kAlpha.x;
   } else if (p == 2) {
-    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z +
-                 cosThetaO * bsdf.sin2kAlpha.z;
-    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z -
-                 sinThetaO * bsdf.sin2kAlpha.z;
+    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z + cosThetaO * bsdf.sin2kAlpha.z;
+    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z - sinThetaO * bsdf.sin2kAlpha.z;
   } else {
     sinThetaOp = sinThetaO;
     cosThetaOp = cosThetaO;
@@ -327,19 +317,18 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // Sample Mp to compute θi
   // taken from
   // https://github.com/mmp/pbrt-v3/blob/master/src/materials/hair.cpp
-  u[1].x = max(u[1].x, float(1e-5));
-  auto cosTheta =
-      1 +
-      bsdf.v[p] * log(u[1].x + (1 - u[1].x) * exp(-2 / bsdf.v[p]));
+  u[1].x        = max(u[1].x, float(1e-5));
+  auto cosTheta = 1 +
+                  bsdf.v[p] * log(u[1].x + (1 - u[1].x) * exp(-2 / bsdf.v[p]));
   auto sinTheta  = SafeSqrt(1 - pow2(cosTheta));
   auto cosPhi    = cos(2 * pif * u[1].y);
   auto sinThetaI = -cosTheta * sinThetaOp + sinTheta * cosPhi * cosThetaOp;
   auto cosThetaI = SafeSqrt(1 - pow2(sinThetaI));
   // Sample Np to compute ∆φ
-  auto etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
-  auto sinGammaT = bsdf.h / etap;
-  auto cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
-  auto gammaT    = SafeASin(sinGammaT);
+  auto  etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto  sinGammaT = bsdf.h / etap;
+  auto  cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  auto  gammaT    = SafeASin(sinGammaT);
   float dphi;
   if (p < pMax)
     dphi = Phi(p, bsdf.gammaO, gammaT) +
@@ -347,7 +336,7 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   else
     dphi = 2 * pif * u[0].y;
   // Compute wi from sampled hair scattering angles
-  auto phiI     = phiO + dphi;
+  auto phiI = phiO + dphi;
   return {sinThetaI, cosThetaI * cos(phiI), cosThetaI * sin(phiI)};
   // Compute PDF for sampled hair scattering direction wi
   // auto pdf = 0;

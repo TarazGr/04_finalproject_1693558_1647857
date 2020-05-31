@@ -69,10 +69,10 @@ using math::vec4i;
 using math::zero2f;
 using math::zero3f;
 
-using math::pow2;
 using math::clamp;
-using math::pif;
 using math::max;
+using math::pif;
+using math::pow2;
 
 }  // namespace yocto::extension
 
@@ -111,7 +111,6 @@ inline float TrimmedLogistic(float x, float s, float a, float b);
 inline float I0(float x);
 inline float LogI0(float x);
 
-
 inline float SafeSqrt(float x) {
   if (x >= -0.0001)
     return sqrt(max(float(0), x));
@@ -131,11 +130,11 @@ inline float Phi(int p, float gammaO, float gammaT) {
 
 inline float Logistic(float x, float s) {
   x = abs(x);
-  return exp(-x / s) / (s * pow2(1 + exp(-x / s)));
+  return exp(-x / s) / (s * pow2(1.0f + exp(-x / s)));
 }
 
 inline float LogisticCDF(float x, float s) {
-  return 1 / (1 + exp(-x / s));
+  return 1.0f / (1.0f + exp(-x / s));
 }
 
 inline float TrimmedLogistic(float x, float s, float a, float b) {
@@ -143,10 +142,10 @@ inline float TrimmedLogistic(float x, float s, float a, float b) {
 }
 
 inline float I0(float x) {
-  auto   val   = 0;
-  auto   x2i   = 1;
-  auto ifact = 1;
-  auto     i4    = 1;
+  auto    val   = 0.0f;
+  auto    x2i   = 1.0f;
+  int64_t ifact = 1;
+  auto    i4    = 1;
   for (auto i = 0; i < 10; i++) {
     if (i > 1) ifact *= i;
     val += x2i / (i4 * pow2(ifact));
@@ -158,7 +157,7 @@ inline float I0(float x) {
 
 inline float LogI0(float x) {
   if (x > 12)
-    return x + 0.5 * (-log(2 * pif) + log(1 / x) + 1 / (8 * x));
+    return x + 0.5f * (-log(2.0f * pif) + log(1.0f / x) + 1.0f / (8.0f * x));
   else
     return log(I0(x));
 }
@@ -187,7 +186,6 @@ static float SampleTrimmedLogistic(float u, float s, float a, float b) {
   auto x = -s * log(1 / (u * k + LogisticCDF(a, s)) - 1);
   return clamp(x, a, b);
 }
-
 
 }  // namespace yocto::extension
 

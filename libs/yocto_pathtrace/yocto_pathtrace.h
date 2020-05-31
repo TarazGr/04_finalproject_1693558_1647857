@@ -292,18 +292,11 @@ struct material {
   float opacity      = 1;
   bool  thin         = false;
 
-  //hair specific
+  // hair specific
   float eta    = 0;
   float beta_m = 0;
   float beta_n = 0;
   float alpha  = 0;
-  /*float v[3 + 1]; //pMax = 3
-  float s;
-  vec3f sin2kAlpha = {0,0,0};
-  vec3f cos2kAlpha = {0,0,0};*/
-
-
-
 
   // textures
   ptr::texture* emission_tex     = nullptr;
