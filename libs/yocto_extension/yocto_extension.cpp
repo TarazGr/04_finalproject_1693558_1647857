@@ -379,5 +379,4 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   // pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
   //       apPdf[pMax] * (1 / (2 * pif));
 }
-
 }  // namespace yocto::extension
