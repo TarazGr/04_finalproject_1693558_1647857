@@ -94,7 +94,7 @@ struct hair {
   float alpha   = 0;
   vec3f sigma_a = zero3f;
 
-  std::vector<float> v = std::vector<float>(pMax + 1);
+  std::vector<float> v = std::vector<float>();
 
   float s = 0;
 
@@ -143,11 +143,11 @@ inline float TrimmedLogistic(float x, float s, float a, float b) {
 }
 
 inline float I0(float x) {
-  float   val   = 0;
-  float   x2i   = 1;
-  int64_t ifact = 1;
-  int     i4    = 1;
-  for (int i = 0; i < 10; ++i) {
+  auto   val   = 0;
+  auto   x2i   = 1;
+  auto ifact = 1;
+  auto     i4    = 1;
+  for (auto i = 0; i < 10; i++) {
     if (i > 1) ifact *= i;
     val += x2i / (i4 * pow2(ifact));
     x2i *= x * x;
@@ -183,8 +183,8 @@ static vec2f DemuxFloat(float f) {
   return {bits[0] / float(1 << 16), bits[1] / float(1 << 16)};
 }
 static float SampleTrimmedLogistic(float u, float s, float a, float b) {
-  float k = LogisticCDF(b, s) - LogisticCDF(a, s);
-  float x = -s * log(1 / (u * k + LogisticCDF(a, s)) - 1);
+  auto k = LogisticCDF(b, s) - LogisticCDF(a, s);
+  auto x = -s * log(1 / (u * k + LogisticCDF(a, s)) - 1);
   return clamp(x, a, b);
 }
 
