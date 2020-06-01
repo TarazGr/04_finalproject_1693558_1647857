@@ -105,10 +105,10 @@ std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
     float h, const vec3f& T) {
   std::vector<vec3f> ap = std::vector<vec3f>();
   // Compute p = 0 attenuation at initial cylinder intersection
-  // float cosGammaO = safeSqrt(1 - h * h);
-  // float cosTheta = cosThetaO * cosGammaO;
-  auto f = fresnel_dielectric(eta, normal, outging);
-  // float f = FrDielectric(cosTheta, 1.f, eta);
+  float cosGammaO = SafeSqrt(1 - h * h);
+  float cosTheta = cosThetaO * cosGammaO;
+  //auto f = fresnel_dielectric(eta, normal, outging);
+   float f = FrDielectric(cosTheta, 1.f, eta);
   ap.push_back(vec3f{f});  // Spectrum
   // Compute p = 1 attenuation term
   ap.push_back(pow2(1 - f) * T);
