@@ -20,16 +20,6 @@
       ]
     }
   },
-  
-    "sky": {
-      "emission": [
-        1,
-        1,
-        1
-      ],
-      "emission_tex": "sky"
-    }
-  },
   "objects": {
     "floor": {
       "shape": "floor",
@@ -120,7 +110,7 @@
       "material": "hair1"
     },
     "dark": {
-      "shape": "hairball1",
+      "shape": "hairball3",
       "frame": [
         1,
         0,
@@ -235,17 +225,17 @@
     "hair1": {
       "specular": 0,
       "color": [
-        3.35, 
-        5.58, 
-        10.96
+        0.5, 
+        0.0, 
+        0.0
       ]
     },
     "dark": {
       "specular": 0,
       "color": [
-        0.84, 
-        1.39, 
-        2.74
+        0.0, 
+        0.5, 
+        0.0
       ]
     },
     "sphere2": {
@@ -260,9 +250,9 @@
     "hair2": {
       "specular": 0,
       "color": [
-        0.06, 
-        0.10, 
-        0.20
+        0.0, 
+        0.0, 
+        0.5
       ]
     },
     "natural": {
