@@ -1229,11 +1229,8 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
 
       if (!object->shape->lines.empty()) {
         incoming = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
-        printf("incoming: {%f, %f, %f}\n", incoming.x, incoming.y, incoming.z);
-        auto eval = eval_hair(bsdf, normal, outgoing, incoming);
-        printf("eval: {%f, %f, %f}\n", eval.x, eval.y, eval.z);
-        auto pdf = sample_hair_pdf(bsdf, normal, outgoing, incoming);
-        if (pdf != -2147483648) printf("pdf: %f\n", pdf);
+        auto eval = eval_hair(bsdf, normal, outgoing, incoming); 
+        //if (eval == zero3f) printf("eval: {%f %f %f}\n", eval.x, eval.y, eval.z);
         /*weight *= eval_hair(bsdf, normal, outgoing, incoming) /
                   sample_hair_pdf(bsdf, normal, outgoing, incoming);*/
       } else if (!is_delta(brdf)) {

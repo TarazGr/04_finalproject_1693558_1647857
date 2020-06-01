@@ -188,22 +188,23 @@ static float SampleTrimmedLogistic(float u, float s, float a, float b) {
 
 float FrDielectric(float cosThetaI, float etaI, float etaT) {
   cosThetaI = clamp(cosThetaI, -1.0f, 1.0f);
-  //Potentially swap indices of refraction 
-  auto entering = cosThetaI > 0.f;
+  // Potentially swap indices of refraction
+  auto entering = cosThetaI > 0.0f;
   if (!entering) {
-      std::swap(etaI, etaT);
-      cosThetaI = abs(cosThetaI);
+    std::swap(etaI, etaT);
+    cosThetaI = abs(cosThetaI);
   }
-  //Compute cosThetaT using Snell’s law
-  float sinThetaI = sqrt(max((float)0, 1 - cosThetaI * cosThetaI));
-  float sinThetaT = etaI / etaT * sinThetaI;
-  //Handle total internal reflection>> 
-  if (sinThetaT >= 1)
-      return 1;
-  float cosThetaT = sqrt(max((float)0, 1 - sinThetaT * sinThetaT));
+  // Compute cosThetaT using Snell’s law
+  auto sinThetaI = sqrt(max(0.0f, 1.0f - cosThetaI * cosThetaI));
+  auto sinThetaT = etaI / etaT * sinThetaI;
+  // Handle total internal reflection>>
+  if (sinThetaT >= 1.0f) return 1.0f;
+  auto cosThetaT = sqrt(max(0.0f, 1.0f - sinThetaT * sinThetaT));
 
-  float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) / ((etaT * cosThetaI) + (etaI * cosThetaT));
-  float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) / ((etaI * cosThetaI) + (etaT * cosThetaT));
+  auto Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) /
+               ((etaT * cosThetaI) + (etaI * cosThetaT));
+  auto Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) /
+               ((etaI * cosThetaI) + (etaT * cosThetaT));
   return (Rparl * Rparl + Rperp * Rperp) / 2;
 }
 
