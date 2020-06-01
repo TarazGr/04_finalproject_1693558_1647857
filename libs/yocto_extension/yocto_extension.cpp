@@ -213,14 +213,14 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.alpha   = 2.0f;
   //⟨Compute longitudinal variance from βm⟩ //roughness
   hdata.v.push_back(
-      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow(0.25f, 20)) *
-      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow(0.25f, 20)));
+      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)) *
+      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)));
   hdata.v.push_back(.25f * hdata.v[0]);
   hdata.v.push_back(4.0f * hdata.v[0]);
   for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
   //⟨Compute azimuthal logistic scale factor from βn⟩
   hdata.s = SqrtPiOver8 *
-            (0.265f * 0.3f + 1.194f * 0.3f * 0.3f + 5.372f * Pow(0.3f, 22));
+            (0.265f * 0.3f + 1.194f * 0.3f * 0.3f + 5.372f * Pow<22>(0.3f));
   //⟨Compute α terms for hair scales⟩
   hdata.sin2kAlpha.x = sin(2.0f * pif / 180.0f);
   hdata.cos2kAlpha.x = SafeSqrt(1 - hdata.sin2kAlpha.x * hdata.sin2kAlpha.x);
