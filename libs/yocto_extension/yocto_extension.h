@@ -143,7 +143,7 @@ inline float TrimmedLogistic(float x, float s, float a, float b) {
 template <int n>
 static float Pow(float v) {
   static_assert(n > 0, "Power can't be negative");
-  Float        n2 = Pow<n / 2>(v);
+  auto        n2 = Pow<n / 2>(v);
   return n2*n2*Pow<n & 1>(v);
 }
 
