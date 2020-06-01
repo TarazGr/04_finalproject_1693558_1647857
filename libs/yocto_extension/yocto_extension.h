@@ -140,6 +140,22 @@ inline float TrimmedLogistic(float x, float s, float a, float b) {
   return Logistic(x, s) / (LogisticCDF(b, s) - LogisticCDF(a, s));
 }
 
+template <int n>
+static float Pow(float v) {
+  static_assert(n > 0, "Power can't be negative");
+  Float        n2 = Pow<n / 2>(v);
+  return n2*n2*Pow<n & 1>(v);
+}
+
+template <>
+inline float Pow<1>(float v) {
+  return v;
+}
+template <>
+inline float Pow<0>(float v) {
+  return 1;
+}
+
 inline float I0(float x) {
   auto    val   = 0.0f;
   auto    x2i   = 1.0f;
