@@ -62,7 +62,6 @@ using math::min;
 using math::pi;
 using math::pif;
 using math::pow;
-using math::pow2;
 using math::sample_discrete_cdf;
 using math::sample_discrete_cdf_pdf;
 using math::sample_uniform;
@@ -105,19 +104,17 @@ std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
     float h, const vec3f& T) {
   std::vector<vec3f> ap = std::vector<vec3f>();
   // Compute p = 0 attenuation at initial cylinder intersection
-  float cosGammaO = SafeSqrt(1 - h * h);
-  float cosTheta = cosThetaO * cosGammaO;
+  auto cosGammaO = SafeSqrt(1 - h * h);
+  auto cosTheta = cosThetaO * cosGammaO;
   //auto f = fresnel_dielectric(eta, normal, outging);
    float f = FrDielectric(cosTheta, 1.f, eta);
   ap.push_back(vec3f{f});  // Spectrum
   // Compute p = 1 attenuation term
-  ap.push_back(pow2(1 - f) * T);
+  ap.push_back(((1.0f - f) * T) * ((1.0f - f) * T));
   // Compute attenuation terms up to p = pMax
   for (auto p = 2; p < pMax; p++) ap.push_back(ap[p - 1] * T * f);
   // Compute attenuation term accounting for remaining orders of scattering
   ap.push_back(ap[pMax - 1] * f * T / (vec3f{1} - T * f));
-  for (auto p : ap) printf("ap.x=%f, ap.x=%f, ap.z=%f\n", p.x, p.y, p.z);
-  printf("\n");
   return ap;
 }
 
@@ -127,11 +124,11 @@ std::vector<float> ComputeApPdf(const hair& bsdf, float cosThetaO,
   auto sinThetaO = SafeSqrt(1 - cosThetaO * cosThetaO);
   // Compute cos θt for refracted ray
   auto sinThetaT = sinThetaO / bsdf.eta;
-  auto cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
+  auto cosThetaT = SafeSqrt(1 - sinThetaT * sinThetaT);
   // Compute γt for refracted ray
-  auto etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto etap = sqrt(bsdf.eta * bsdf.eta - sinThetaO * sinThetaO) / cosThetaO;
   auto sinGammaT = bsdf.h / etap;
-  auto cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  auto cosGammaT = SafeSqrt(1 - sinGammaT*sinGammaT);
   // Compute the transmittance T of a single path through the cylinder
   auto               T  = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
   std::vector<vec3f> ap = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
@@ -152,14 +149,14 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
     const vec3f& outgoing, const vec3f& incoming) {
   // performs the same computation was we just implemented for hair_sample
   auto sinThetaO = outgoing.x;
-  auto cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
+  auto cosThetaO = SafeSqrt(1 - sinThetaO * sinThetaO);
   auto phiO      = atan2(outgoing.z, outgoing.y);
   // Compute hair coordinate system terms related to wi
   auto sinThetaI = incoming.x;
-  auto cosThetaI = SafeSqrt(1 - pow2(sinThetaI));
+  auto cosThetaI = SafeSqrt(1 - sinThetaI*sinThetaI);
   auto phiI      = atan2(incoming.z, incoming.y);
   // Compute γt for refracted ray
-  auto etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto etap      = sqrt(bsdf.eta * bsdf.eta - sinThetaO*sinThetaO) / cosThetaO;
   auto sinGammaT = bsdf.h / etap;
   auto gammaT    = SafeASin(sinGammaT);
 
@@ -210,23 +207,24 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.beta_n  = 0.3f;
   hdata.alpha   = 2.0f;
   //⟨Compute longitudinal variance from βm⟩ //roughness
-  hdata.v.push_back(
-      pow2(0.726f * 0.25f + 0.812f * pow2(0.25f) +
-           3.7f * pow(0.25f, 20)));
+  hdata.v.push_back((
+      0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * pow(0.25f, 20)) *
+      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * pow(0.25f, 20)));
   hdata.v.push_back(.25f * hdata.v[0]);
   hdata.v.push_back(4.0f * hdata.v[0]);
   for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
   //⟨Compute azimuthal logistic scale factor from βn⟩
   hdata.s = SqrtPiOver8 *
-            (0.265f * 0.3f + 1.194f * pow2(0.3f) +
+            (0.265f * 0.3f + 1.194f * 0.3f*0.3f +
                 5.372f * pow(0.3f, 22));
   //⟨Compute α terms for hair scales⟩
   hdata.sin2kAlpha.x = sin(2.0f * pif / 180.0f);
-  hdata.cos2kAlpha.x = SafeSqrt(1 - pow2(hdata.sin2kAlpha.x));
+  hdata.cos2kAlpha.x = SafeSqrt(
+      1 - hdata.sin2kAlpha.x * hdata.sin2kAlpha.x);
   for (auto i = 1; i < 3; i++) {
     hdata.sin2kAlpha[i] = 2 * hdata.cos2kAlpha[i - 1] * hdata.sin2kAlpha[i - 1];
-    hdata.cos2kAlpha[i] = pow2(hdata.cos2kAlpha[i - 1]) -
-                          pow2(hdata.sin2kAlpha[i - 1]);
+    hdata.cos2kAlpha[i] = hdata.cos2kAlpha[i - 1] * hdata.cos2kAlpha[i - 1] -
+                          hdata.sin2kAlpha[i - 1] * hdata.sin2kAlpha[i - 1];
   }
   return hdata;
 }
@@ -235,22 +233,24 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
     const vec3f& incoming) {
   // Compute hair coordinate system terms related to wo
   auto sinThetaO = outgoing.x;
-  auto cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
+  auto cosThetaO = SafeSqrt(1 - sinThetaO * sinThetaO);
   auto phiO      = atan2(outgoing.z, outgoing.y);
   // Compute hair coordinate system terms related to wi
   auto sinThetaI = incoming.x;
-  auto cosThetaI = SafeSqrt(1 - pow2(sinThetaI));
+  auto cosThetaI = SafeSqrt(1 - sinThetaI * sinThetaI);
   auto phiI      = atan2(incoming.z, incoming.y);
   // Compute cos θt for refracted ray
   auto sinThetaT = sinThetaO / bsdf.eta;
-  auto cosThetaT = SafeSqrt(1 - pow2(sinThetaT));
+  auto cosThetaT = SafeSqrt(1 - sinThetaT * sinThetaT);
   // Compute γt for refracted ray
-  auto etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto etap = sqrt(bsdf.eta * bsdf.eta - sinThetaO * sinThetaO) /
+              cosThetaO;
   auto sinGammaT = bsdf.h / etap;
-  auto cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  auto cosGammaT = SafeSqrt(1 - sinGammaT * sinGammaT);
   auto gammaT    = SafeASin(sinGammaT);
   // Compute the transmittance T of a single path through the cylinder
   auto T = exp(-bsdf.sigma_a * (2 * cosGammaT / cosThetaT));
+  //printf("T.x=%f, T.y=%f, T.z=%f\n", T.x, T.y, T.z);
   // Evaluate hair BSDF
   auto               phi = phiI - phiO;
   std::vector<vec3f> ap  = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
@@ -295,7 +295,7 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
     const vec2f& rng) {
   // Compute hair coordinate system terms related to wo
   auto sinThetaO = outgoing.x;
-  auto cosThetaO = SafeSqrt(1 - pow2(sinThetaO));
+  auto cosThetaO = SafeSqrt(1 - sinThetaO * sinThetaO);
   auto phiO      = atan2(outgoing.z, outgoing.y);
   // Derive four random samples from u2
   std::vector<vec2f> u = {DemuxFloat(rng.x), DemuxFloat(rng.y)};
@@ -327,14 +327,15 @@ vec3f sample_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   u[1].x        = max(u[1].x, float(1e-5));
   auto cosTheta = 1 +
                   bsdf.v[p] * log(u[1].x + (1 - u[1].x) * exp(-2 / bsdf.v[p]));
-  auto sinTheta  = SafeSqrt(1 - pow2(cosTheta));
+  auto sinTheta  = SafeSqrt(1 - cosTheta * cosTheta);
   auto cosPhi    = cos(2 * pif * u[1].y);
   auto sinThetaI = -cosTheta * sinThetaOp + sinTheta * cosPhi * cosThetaOp;
-  auto cosThetaI = SafeSqrt(1 - pow2(sinThetaI));
+  auto cosThetaI = SafeSqrt(1 - sinThetaI * sinThetaI);
   // Sample Np to compute ∆φ
-  auto  etap      = sqrt(bsdf.eta * bsdf.eta - pow2(sinThetaO)) / cosThetaO;
+  auto etap = sqrt(bsdf.eta * bsdf.eta - sinThetaO * sinThetaO) /
+              cosThetaO;
   auto  sinGammaT = bsdf.h / etap;
-  auto  cosGammaT = SafeSqrt(1 - pow2(sinGammaT));
+  auto  cosGammaT = SafeSqrt(1 - sinGammaT * sinGammaT);
   auto  gammaT    = SafeASin(sinGammaT);
   float dphi;
   if (p < pMax)

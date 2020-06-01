@@ -72,7 +72,6 @@ using math::zero3f;
 using math::clamp;
 using math::max;
 using math::pif;
-using math::pow2;
 
 }  // namespace yocto::extension
 
@@ -112,16 +111,16 @@ inline float I0(float x);
 inline float LogI0(float x);
 
 inline float SafeSqrt(float x) {
-  if (x >= -0.0001)
+  if (x >= -1e-4)
     return sqrt(max(float(0), x));
   else
-    return 0;
+    return x;
 }
 inline float SafeASin(float x) {
   if (x >= -1.0001 && x <= 1.0001)
     return asin(clamp(x, -1.0, 1.0));
   else
-    return 0;
+    return x;
 }
 
 inline float Phi(int p, float gammaO, float gammaT) {
@@ -130,7 +129,7 @@ inline float Phi(int p, float gammaO, float gammaT) {
 
 inline float Logistic(float x, float s) {
   x = abs(x);
-  return exp(-x / s) / (s * pow2(1.0f + exp(-x / s)));
+  return exp(-x / s) / (s * (1.0f + exp(-x / s)) * (1.0f + exp(-x / s)));
 }
 
 inline float LogisticCDF(float x, float s) {
@@ -148,7 +147,7 @@ inline float I0(float x) {
   auto    i4    = 1;
   for (auto i = 0; i < 10; i++) {
     if (i > 1) ifact *= i;
-    val += x2i / (i4 * pow2(ifact));
+    val += x2i / (i4 * ifact * ifact);
     x2i *= x * x;
     i4 *= 4;
   }
@@ -190,18 +189,18 @@ static float SampleTrimmedLogistic(float u, float s, float a, float b) {
 float FrDielectric(float cosThetaI, float etaI, float etaT) {
   cosThetaI = clamp(cosThetaI, -1.0f, 1.0f);
   //Potentially swap indices of refraction 
-  bool entering = cosThetaI > 0.f;
+  auto entering = cosThetaI > 0.f;
   if (!entering) {
       std::swap(etaI, etaT);
-      cosThetaI = std::abs(cosThetaI);
+      cosThetaI = abs(cosThetaI);
   }
   //Compute cosThetaT using Snell’s law
-  float sinThetaI = std::sqrt(std::max((float)0, 1 - cosThetaI * cosThetaI));
+  float sinThetaI = sqrt(max((float)0, 1 - cosThetaI * cosThetaI));
   float sinThetaT = etaI / etaT * sinThetaI;
   //Handle total internal reflection>> 
   if (sinThetaT >= 1)
       return 1;
-  float cosThetaT = std::sqrt(std::max((float)0, 1 - sinThetaT * sinThetaT));
+  float cosThetaT = sqrt(max((float)0, 1 - sinThetaT * sinThetaT));
 
   float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) / ((etaT * cosThetaI) + (etaI * cosThetaT));
   float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) / ((etaI * cosThetaI) + (etaT * cosThetaT));
