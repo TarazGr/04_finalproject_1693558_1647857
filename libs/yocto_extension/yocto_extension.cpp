@@ -114,12 +114,6 @@ std::vector<vec3f> Ap(float cosThetaO, float eta, vec3f normal, vec3f outging,
   for (auto p = 2; p < pMax; p++) ap.push_back(ap[p - 1] * T * f);
   // Compute attenuation term accounting for remaining orders of scattering
   ap.push_back(ap[pMax - 1] * f * T / (vec3f{1.0f} - T * f));
-  //for (auto p : ap)
-  //  if (p != zero3f)
-  //    printf("p {%f %f %f}\n", p.x, p.y, p.z);
-  //  else
-  //    printf("caught a 0");
-  //printf("\n");
   return ap;
 }
 
@@ -139,14 +133,16 @@ std::vector<float> ComputeApPdf(const hair& bsdf, float cosThetaO,
   std::vector<vec3f> ap = Ap(cosThetaO, bsdf.eta, normal, outgoing, bsdf.h, T);
   // Compute Ap PDF from individual Ap terms
   std::vector<float> apPdf = std::vector<float>(pMax + 1);
-  auto               sumY  = 0;
+  auto               sumY  = 0.0f;
   auto               first = ap.begin();
   auto               last  = ap.end();
   while (first != last) {
     sumY += (bsdf.s + (*first).y);
     ++first;
   }
-  for (auto i = 0; i <= pMax; i++) apPdf[i] = ap[i].y / sumY;
+  for (auto i = 0; i <= pMax; i++) {
+    apPdf[i] = ap[i].y / sumY;
+  }
   return apPdf;
 }
 
@@ -167,7 +163,7 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
 
   std::vector<float> apPdf = ComputeApPdf(bsdf, cosThetaO, normal, outgoing);
   auto               phi   = phiI - phiO;
-  auto               pdf   = 0;
+  auto               pdf   = 0.0f;
   for (auto p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
     float sinThetaOp, cosThetaOp;
@@ -197,6 +193,7 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
     pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
            apPdf[p] * Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
   }
+  //printf("\n");
   pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
          apPdf[pMax] * (1 / (2 * pif));
   return pdf;
@@ -287,7 +284,7 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
   fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
           ap[pMax] / (2 * pif);
   if (abs(incoming.z) > 0) fsum /= abs(incoming.z);
-  //if (fsum == zero3f) printf("fsum: {%f, %f, %f}\n", fsum.x, fsum.y, fsum.z);
+  // if (fsum == zero3f) printf("fsum: {%f, %f, %f}\n", fsum.x, fsum.y, fsum.z);
   return fsum;
 }
 
