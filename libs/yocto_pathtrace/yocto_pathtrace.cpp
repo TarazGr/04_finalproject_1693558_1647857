@@ -1228,11 +1228,9 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       auto incoming = zero3f;
 
       if (!object->shape->lines.empty()) {
-        incoming  = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
-        /*auto eval = eval_hair(bsdf, normal, outgoing, incoming);
-        auto pdf = sample_hair_pdf(bsdf, normal, outgoing, incoming);*/
-        weight *= eval_hair(bsdf, normal, outgoing, incoming) /
-                  sample_hair_pdf(bsdf, normal, outgoing, incoming);
+        auto sample = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
+        incoming    = sample.first;
+        weight *= eval_hair(bsdf, normal, outgoing, incoming) / sample.second;
       } else if (!is_delta(brdf)) {
         if (rand1f(rng) < 0.5f) {
           incoming = sample_brdfcos(
@@ -1295,7 +1293,7 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
     if (weight == zero3f || !isfinite(weight)) break;
 
     // russian roulette
-    if (bounce > 3) {
+    if (bounce > 6) {
       auto rr_prob = min((float)0.99, max(weight));
       if (rand1f(rng) >= rr_prob) break;
       weight *= 1 / rr_prob;
