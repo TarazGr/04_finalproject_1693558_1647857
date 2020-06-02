@@ -281,7 +281,8 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.h       = -1 + 2 * uv.y;
   hdata.gammaO  = SafeASin(hdata.h);
   hdata.eta     = 1.55f;
-  hdata.sigma_a = material->color;
+  //hdata.sigma_a = material->color;
+  hdata.sigma_a = SigmaAFromReflectance(material->color, hdata.beta_n);
   hdata.beta_m  = 0.25f;
   hdata.beta_n  = 0.3f;
   hdata.alpha   = 2.0f;

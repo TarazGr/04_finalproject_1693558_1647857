@@ -224,6 +224,16 @@ float FrDielectric(float cosThetaI, float etaI, float etaT) {
   return (Rparl * Rparl + Rperp * Rperp) / 2;
 }
 
+vec3f SigmaAFromReflectance(const vec3f &c, float beta_n) {
+       vec3f sigma_a;
+       for (int i = 0; i < 3; ++i)
+           sigma_a[i] = (log(c[i])*log(c[i]) /
+                    (5.969f - 0.215f * beta_n + 2.532f * (beta_n*beta_n) -
+                     10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
+                     0.245f * Pow<5>(beta_n)));
+       return sigma_a;
+}
+
 }  // namespace yocto::extension
 
 #endif
