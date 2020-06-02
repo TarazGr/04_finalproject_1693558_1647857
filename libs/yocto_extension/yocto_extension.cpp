@@ -226,54 +226,6 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
   pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
          apPdf[pMax] * (1 / (2 * pif));
   return pdf;
-  //// performs the same computation was we just implemented for hair_sample
-  // auto sinThetaO = outgoing.x;
-  // auto cosThetaO = SafeSqrt(1 - sinThetaO * sinThetaO);
-  // auto phiO      = atan2(outgoing.z, outgoing.y);
-  //// Compute hair coordinate system terms related to wi
-  // auto sinThetaI = incoming.x;
-  // auto cosThetaI = SafeSqrt(1 - sinThetaI * sinThetaI);
-  // auto phiI      = atan2(incoming.z, incoming.y);
-  //// Compute γt for refracted ray
-  // auto etap = sqrt(bsdf.eta * bsdf.eta - sinThetaO * sinThetaO) / cosThetaO;
-  // auto sinGammaT = bsdf.h / etap;
-  // auto gammaT    = SafeASin(sinGammaT);
-
-  // std::vector<float> apPdf = ComputeApPdf(bsdf, cosThetaO, normal, outgoing);
-  // auto               phi   = phiI - phiO;
-  // auto               pdf   = 0.0f;
-  // for (auto p = 0; p < pMax; p++) {
-  //  // Compute sin θi and cos θi terms accounting for scales
-  //  float sinThetaOp, cosThetaOp;
-  //  if (p == 0) {
-  //    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y -
-  //                 cosThetaO * bsdf.sin2kAlpha.y;
-  //    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y +
-  //                 sinThetaO * bsdf.sin2kAlpha.y;
-  //  }
-  //  // Handle remainder of p values for hair scale tilt
-  //  else if (p == 1) {
-  //    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x +
-  //                 cosThetaO * bsdf.sin2kAlpha.x;
-  //    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x -
-  //                 sinThetaO * bsdf.sin2kAlpha.x;
-  //  } else if (p == 2) {
-  //    sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z +
-  //                 cosThetaO * bsdf.sin2kAlpha.z;
-  //    cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z -
-  //                 sinThetaO * bsdf.sin2kAlpha.z;
-  //  } else {
-  //    sinThetaOp = sinThetaO;
-  //    cosThetaOp = cosThetaO;
-  //  }
-  //  // Handle out-of-range cos θi from scale adjustment
-  //  cosThetaOp = abs(cosThetaOp);
-  //  pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
-  //         apPdf[p] * Np(phi, p, bsdf.s, bsdf.gammaO, gammaT);
-  //}
-  // pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
-  //       apPdf[pMax] * (1 / (2 * pif));
-  // return pdf;
 }
 
 hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
@@ -286,6 +238,7 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.beta_m  = 0.25f;
   hdata.beta_n  = 0.3f;
   hdata.alpha   = 2.0f;
+
   //⟨Compute longitudinal variance from βm⟩ //roughness
   /*hdata.v.push_back(
       (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)) *
