@@ -1219,19 +1219,19 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
       // next direction
       auto incoming = zero3f;
 
-      if (!object->shape->lines.empty()) {
-        auto sample = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
-        incoming    = sample.first;
-        auto eval   = eval_hair(bsdf, normal, outgoing, incoming);
-        weight *= eval / sample.second;
-      } 
-      else if (!is_delta(brdf)) {
+      if (!is_delta(brdf)) {
         if (rand1f(rng) < 0.5f) {
           incoming = sample_brdfcos(
               brdf, normal, outgoing, rand1f(rng), rand2f(rng));
         } else {
           incoming = sample_lights(
               scene, position, rand1f(rng), rand1f(rng), rand2f(rng));
+        }
+        if (!object->shape->lines.empty()) {
+          auto sample = sample_hair(bsdf, normal, -outgoing, rand2f(rng));
+          incoming    = sample.first;
+          auto eval   = eval_hair(bsdf, normal, outgoing, incoming);
+          weight *= eval / sample.second;
         }
         weight *= eval_brdfcos(brdf, normal, outgoing, incoming) /
                   (0.5f * sample_brdfcos_pdf(brdf, normal, outgoing, incoming) +
