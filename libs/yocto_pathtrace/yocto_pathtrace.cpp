@@ -347,14 +347,6 @@ struct brdf {
   float metal_pdf        = 0;
   float transmission_pdf = 0;
   float refraction_pdf   = 0;
-
-  // hair data
-  float h      = 0;
-  float gammaO = 0;
-  float eta    = 0;
-  float beta_m = 0;
-  float beta_n = 0;
-  float alpha  = 0;
 };
 
 // Eval material to obatain emission, brdf and opacity.
@@ -1232,7 +1224,7 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
         incoming    = sample.first;
         weight *= eval_hair(bsdf, normal, outgoing, incoming) / sample.second;
       } 
-      if (!is_delta(brdf)) {
+      else if (!is_delta(brdf)) {
         if (rand1f(rng) < 0.5f) {
           incoming = sample_brdfcos(
               brdf, normal, outgoing, rand1f(rng), rand2f(rng));
@@ -1294,7 +1286,7 @@ static vec4f trace_path(const ptr::scene* scene, const ray3f& ray_,
     if (weight == zero3f || !isfinite(weight)) break;
 
     // russian roulette
-    if (bounce > 6) {
+    if (bounce > 3) {
       auto rr_prob = min((float)0.99, max(weight));
       if (rand1f(rng) >= rr_prob) break;
       weight *= 1 / rr_prob;
