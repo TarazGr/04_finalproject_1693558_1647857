@@ -431,7 +431,7 @@ std::pair<vec3f, float> sample_hair(const hair& bsdf, const vec3f& normal,
   auto pdf = 0.0f;
   for (auto p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
-    float sinThetaIp, cosThetaIp;
+  /*  float sinThetaIp, cosThetaIp;
     if (p == 0) {
       sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y +
                    cosThetaI * bsdf.sin2kAlpha.y;
@@ -452,7 +452,30 @@ std::pair<vec3f, float> sample_hair(const hair& bsdf, const vec3f& normal,
       cosThetaIp = cosThetaI;
     }
     pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, bsdf.v[p]) *
-           apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
+           apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);*/
+    float sinThetaOp, cosThetaOp;
+    if (p == 0) {
+        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y - cosThetaO * bsdf.sin2kAlpha.y;
+        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y + sinThetaO * bsdf.sin2kAlpha.y;
+    }
+
+    // Handle remainder of $p$ values for hair scale tilt
+    else if (p == 1) {
+        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x + cosThetaO * bsdf.sin2kAlpha.x;
+        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x - sinThetaO * bsdf.sin2kAlpha.x;
+    } else if (p == 2) {
+        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z + cosThetaO * bsdf.sin2kAlpha.z ;
+        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z - sinThetaO * bsdf.sin2kAlpha.z;
+    } else {
+        sinThetaOp = sinThetaO;
+        cosThetaOp = cosThetaO;
+    }
+
+    // Handle out-of-range $\cos \thetao$ from scale adjustment
+    cosThetaOp = std::abs(cosThetaOp);
+    pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
+            apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
+    
   }
   pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
          apPdf[pMax] * (1 / (2 * pif));

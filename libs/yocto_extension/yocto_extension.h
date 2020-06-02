@@ -100,7 +100,7 @@ struct hair {
   vec3f sin2kAlpha = zero3f;
   vec3f cos2kAlpha = zero3f;
 };
-
+inline float Sqr(float v);
 inline float SafeSqrt(float x);
 inline float SafeASin(float x);
 inline float Phi(int p, float gammaO, float gammaT);
@@ -110,6 +110,7 @@ inline float TrimmedLogistic(float x, float s, float a, float b);
 inline float I0(float x);
 inline float LogI0(float x);
 
+inline float Sqr(float v) { return v * v; }
 inline float SafeSqrt(float x) {
   if (x >= -1e-4)
     return sqrt(max(float(0), x));
@@ -227,10 +228,14 @@ float FrDielectric(float cosThetaI, float etaI, float etaT) {
 vec3f SigmaAFromReflectance(const vec3f &c, float beta_n) {
        vec3f sigma_a;
        for (int i = 0; i < 3; ++i)
-           sigma_a[i] = (log(c[i])*log(c[i]) /
+	        sigma_a[i] = Sqr(log(c[i]) /
+                         (5.969f - 0.215f * beta_n + 2.532f * Sqr(beta_n) -
+                          10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
+                          0.245f * Pow<5>(beta_n)));
+          /*sigma_a[i] = (log(c[i])*log(c[i]) /
                     (5.969f - 0.215f * beta_n + 2.532f * (beta_n*beta_n) -
                      10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
-                     0.245f * Pow<5>(beta_n)));
+                     0.245f * Pow<5>(beta_n)));*/
        return sigma_a;
 }
 
