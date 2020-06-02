@@ -282,20 +282,26 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   hdata.gammaO  = SafeASin(hdata.h);
   hdata.eta     = 1.55f;
   //hdata.sigma_a = material->color;
-  hdata.sigma_a = SigmaAFromReflectance(material->color, hdata.beta_n);
+  hdata.sigma_a = SigmaAFromReflectance(material->color, 0.3f);
   hdata.beta_m  = 0.25f;
   hdata.beta_n  = 0.3f;
   hdata.alpha   = 2.0f;
   //⟨Compute longitudinal variance from βm⟩ //roughness
-  hdata.v.push_back(
+  /*hdata.v.push_back(
       (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)) *
-      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)));
+      (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)));*/
+  hdata.v.push_back(
+    (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m*hdata.beta_m) + 3.7f * Pow<20>(hdata.beta_m)) *
+    (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m*hdata.beta_m) + 3.7f * Pow<20>(hdata.beta_m))
+  );
   hdata.v.push_back(.25f * hdata.v[0]);
   hdata.v.push_back(4.0f * hdata.v[0]);
   for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
   //⟨Compute azimuthal logistic scale factor from βn⟩
+  /*hdata.s = SqrtPiOver8 *
+            (0.265f * 0.3f + 1.194f * 0.3f * 0.3f + 5.372f * Pow<22>(0.3f));*/
   hdata.s = SqrtPiOver8 *
-            (0.265f * 0.3f + 1.194f * 0.3f * 0.3f + 5.372f * Pow<22>(0.3f));
+            (0.265f * hdata.beta_n + 1.194f *(hdata.beta_n*hdata.beta_n) + 5.372f * Pow<22>(hdata.beta_n));
   //⟨Compute α terms for hair scales⟩
   hdata.sin2kAlpha.x = sin(2.0f * pif / 180.0f);
   hdata.cos2kAlpha.x = SafeSqrt(1 - hdata.sin2kAlpha.x * hdata.sin2kAlpha.x);
@@ -335,9 +341,9 @@ vec3f eval_hair(const hair& bsdf, const vec3f& normal, const vec3f& outgoing,
     // Compute sin θi and cos θi terms accounting for scales
     float sinThetaOp, cosThetaOp;
     if (p == 0) {
-      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y +
+      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y -
                    cosThetaO * bsdf.sin2kAlpha.y;
-      cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y -
+      cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y +
                    sinThetaO * bsdf.sin2kAlpha.y;
     } else if (p == 1) {
       sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x +
