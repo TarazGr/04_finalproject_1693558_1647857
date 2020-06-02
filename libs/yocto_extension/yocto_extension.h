@@ -144,8 +144,8 @@ inline float TrimmedLogistic(float x, float s, float a, float b) {
 template <int n>
 static float Pow(float v) {
   static_assert(n > 0, "Power can't be negative");
-  auto        n2 = Pow<n / 2>(v);
-  return n2*n2*Pow<n & 1>(v);
+  auto n2 = Pow<n / 2>(v);
+  return n2 * n2 * Pow<n & 1>(v);
 }
 
 template <>
@@ -226,17 +226,13 @@ float FrDielectric(float cosThetaI, float etaI, float etaT) {
 }
 
 vec3f SigmaAFromReflectance(const vec3f &c, float beta_n) {
-       vec3f sigma_a;
-       for (int i = 0; i < 3; ++i)
-	        sigma_a[i] = Sqr(log(c[i]) /
-                         (5.969f - 0.215f * beta_n + 2.532f * Sqr(beta_n) -
-                          10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
-                          0.245f * Pow<5>(beta_n)));
-          /*sigma_a[i] = (log(c[i])*log(c[i]) /
-                    (5.969f - 0.215f * beta_n + 2.532f * (beta_n*beta_n) -
-                     10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
-                     0.245f * Pow<5>(beta_n)));*/
-       return sigma_a;
+  vec3f sigma_a;
+  for (int i = 0; i < 3; ++i)
+    sigma_a[i] = Sqr(
+        log(c[i]) / (5.969f - 0.215f * beta_n + 2.532f * Sqr(beta_n) -
+                        10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
+                        0.245f * Pow<5>(beta_n)));
+  return sigma_a;
 }
 
 }  // namespace yocto::extension

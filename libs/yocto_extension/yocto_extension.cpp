@@ -277,11 +277,11 @@ float sample_hair_pdf(const hair& bsdf, const vec3f& normal,
 }
 
 hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
-  auto hdata    = hair();
-  hdata.h       = -1 + 2 * uv.y;
-  hdata.gammaO  = SafeASin(hdata.h);
-  hdata.eta     = 1.55f;
-  //hdata.sigma_a = material->color;
+  auto hdata   = hair();
+  hdata.h      = -1 + 2 * uv.y;
+  hdata.gammaO = SafeASin(hdata.h);
+  hdata.eta    = 1.55f;
+  // hdata.sigma_a = material->color;
   hdata.sigma_a = SigmaAFromReflectance(material->color, 0.3f);
   hdata.beta_m  = 0.25f;
   hdata.beta_n  = 0.3f;
@@ -291,9 +291,10 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
       (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)) *
       (0.726f * 0.25f + 0.812f * 0.25f * 0.25f + 3.7f * Pow<20>(0.25f)));*/
   hdata.v.push_back(
-    (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m*hdata.beta_m) + 3.7f * Pow<20>(hdata.beta_m)) *
-    (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m*hdata.beta_m) + 3.7f * Pow<20>(hdata.beta_m))
-  );
+      (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m * hdata.beta_m) +
+          3.7f * Pow<20>(hdata.beta_m)) *
+      (0.726f * hdata.beta_m + 0.812f * (hdata.beta_m * hdata.beta_m) +
+          3.7f * Pow<20>(hdata.beta_m)));
   hdata.v.push_back(.25f * hdata.v[0]);
   hdata.v.push_back(4.0f * hdata.v[0]);
   for (auto p = 3; p <= pMax; p++) hdata.v.push_back(hdata.v[2]);
@@ -301,7 +302,8 @@ hair hair_bsdf(const yocto::pathtrace::material* material, vec2f uv) {
   /*hdata.s = SqrtPiOver8 *
             (0.265f * 0.3f + 1.194f * 0.3f * 0.3f + 5.372f * Pow<22>(0.3f));*/
   hdata.s = SqrtPiOver8 *
-            (0.265f * hdata.beta_n + 1.194f *(hdata.beta_n*hdata.beta_n) + 5.372f * Pow<22>(hdata.beta_n));
+            (0.265f * hdata.beta_n + 1.194f * (hdata.beta_n * hdata.beta_n) +
+                5.372f * Pow<22>(hdata.beta_n));
   //⟨Compute α terms for hair scales⟩
   hdata.sin2kAlpha.x = sin(2.0f * pif / 180.0f);
   hdata.cos2kAlpha.x = SafeSqrt(1 - hdata.sin2kAlpha.x * hdata.sin2kAlpha.x);
@@ -431,51 +433,56 @@ std::pair<vec3f, float> sample_hair(const hair& bsdf, const vec3f& normal,
   auto pdf = 0.0f;
   for (auto p = 0; p < pMax; p++) {
     // Compute sin θi and cos θi terms accounting for scales
-  /*  float sinThetaIp, cosThetaIp;
-    if (p == 0) {
-      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y +
-                   cosThetaI * bsdf.sin2kAlpha.y;
-      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y -
-                   sinThetaI * bsdf.sin2kAlpha.y;
-    } else if (p == 1) {
-      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.x +
-                   cosThetaI * bsdf.sin2kAlpha.x;
-      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.x -
-                   sinThetaI * bsdf.sin2kAlpha.x;
-    } else if (p == 2) {
-      sinThetaIp = sinThetaI * bsdf.cos2kAlpha.z +
-                   cosThetaI * bsdf.sin2kAlpha.z;
-      cosThetaIp = cosThetaI * bsdf.cos2kAlpha.z -
-                   sinThetaI * bsdf.sin2kAlpha.z;
-    } else {
-      sinThetaIp = sinThetaI;
-      cosThetaIp = cosThetaI;
-    }
-    pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, bsdf.v[p]) *
-           apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);*/
+    /*  float sinThetaIp, cosThetaIp;
+      if (p == 0) {
+        sinThetaIp = sinThetaI * bsdf.cos2kAlpha.y +
+                     cosThetaI * bsdf.sin2kAlpha.y;
+        cosThetaIp = cosThetaI * bsdf.cos2kAlpha.y -
+                     sinThetaI * bsdf.sin2kAlpha.y;
+      } else if (p == 1) {
+        sinThetaIp = sinThetaI * bsdf.cos2kAlpha.x +
+                     cosThetaI * bsdf.sin2kAlpha.x;
+        cosThetaIp = cosThetaI * bsdf.cos2kAlpha.x -
+                     sinThetaI * bsdf.sin2kAlpha.x;
+      } else if (p == 2) {
+        sinThetaIp = sinThetaI * bsdf.cos2kAlpha.z +
+                     cosThetaI * bsdf.sin2kAlpha.z;
+        cosThetaIp = cosThetaI * bsdf.cos2kAlpha.z -
+                     sinThetaI * bsdf.sin2kAlpha.z;
+      } else {
+        sinThetaIp = sinThetaI;
+        cosThetaIp = cosThetaI;
+      }
+      pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, bsdf.v[p]) *
+             apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);*/
     float sinThetaOp, cosThetaOp;
     if (p == 0) {
-        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y - cosThetaO * bsdf.sin2kAlpha.y;
-        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y + sinThetaO * bsdf.sin2kAlpha.y;
+      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y -
+                   cosThetaO * bsdf.sin2kAlpha.y;
+      cosThetaOp = cosThetaO * bsdf.cos2kAlpha.y +
+                   sinThetaO * bsdf.sin2kAlpha.y;
     }
 
     // Handle remainder of $p$ values for hair scale tilt
     else if (p == 1) {
-        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x + cosThetaO * bsdf.sin2kAlpha.x;
-        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x - sinThetaO * bsdf.sin2kAlpha.x;
+      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.x +
+                   cosThetaO * bsdf.sin2kAlpha.x;
+      cosThetaOp = cosThetaO * bsdf.cos2kAlpha.x -
+                   sinThetaO * bsdf.sin2kAlpha.x;
     } else if (p == 2) {
-        sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z + cosThetaO * bsdf.sin2kAlpha.z ;
-        cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z - sinThetaO * bsdf.sin2kAlpha.z;
+      sinThetaOp = sinThetaO * bsdf.cos2kAlpha.z +
+                   cosThetaO * bsdf.sin2kAlpha.z;
+      cosThetaOp = cosThetaO * bsdf.cos2kAlpha.z -
+                   sinThetaO * bsdf.sin2kAlpha.z;
     } else {
-        sinThetaOp = sinThetaO;
-        cosThetaOp = cosThetaO;
+      sinThetaOp = sinThetaO;
+      cosThetaOp = cosThetaO;
     }
 
     // Handle out-of-range $\cos \thetao$ from scale adjustment
     cosThetaOp = std::abs(cosThetaOp);
     pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
-            apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
-    
+           apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
   }
   pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, bsdf.v[pMax]) *
          apPdf[pMax] * (1 / (2 * pif));
