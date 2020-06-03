@@ -433,7 +433,7 @@ std::pair<vec3f, float> sample_hair(const hair& bsdf, const vec3f& normal,
     }
 
     // Handle out-of-range $\cos \thetao$ from scale adjustment
-    cosThetaOp = std::abs(cosThetaOp);
+    cosThetaOp = abs(cosThetaOp);
     pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, bsdf.v[p]) *
            apPdf[p] * Np(dphi, p, bsdf.s, bsdf.gammaO, gammaT);
   }
