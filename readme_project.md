@@ -7,7 +7,7 @@ Some details that were omitted in the paper were instead taken from their source
 
 ## Theory background
 
-To perform all the correct calculations, the paper gives some geometric descriptions of the prblem at hand. In particular, it provides tools to measure incident and outgoing directions when a ray intersects a hair on a given point.
+To perform all the correct calculations, the paper gives some geometric descriptions of the problem at hand. In particular, it provides tools to measure incident and outgoing directions when a ray intersects a hair on a given point.
 The hair is assumed to be a curve, which is the shape obtained when a circle is swept along a Bézier curve, generating a cylinder. 
 They consider two different kind of scattering:
 
@@ -57,3 +57,27 @@ This function calculates the component of scattering that is dependent on the an
 The new azimuthal direction si calculated assuming a perfect specular reflection and transmission, and then defining a distribution of directions around this central direction. Increasing azimuthal roughness βn gives a wider distribution. This can be approximated by a logistic distribution.
 A function φ(p, h) computes the net change in this azhimutal direction, given a certain p and h.
 Np function therefore computes the angular difference between φ and φ(p, h), and evaluate the azimuthal distribution with that angle. Since this different can be outside the range of the logistic function that is defined on, they rotate this difference around the circle to get the right range. 
+
+Finally, we can show how these functions were used to evaluate the hair bsdf. We'll describe two functions, ``` hair_bsdf()``` which sets the parameters that are going to be used in the various computations, and ```eval_hair()``` which evaluates the bsdf parameters.
+
+#### hair_bsdf()
+At first, this function sets the parameters, initializing the hair data.
+Then it computes the longitudinal roughness v for the various p terms according to the given parameter βm. Higher values of βm give the hair a more "dry" and "ruined" and more diffuse appearence. At low values of βm the hair appear more shiny.
+It then computes the azimuthal logistic scale factor starting from βn. For higher values of βn the hair lightens, as more multiply-scattered light can exit.
+It then computes the α terms for hair scales, that are going to be used for adjustments for the θo terms in the ```eval_hair()``` function.
+
+### eval_hair()
+This function first evaluates the coordinates of the longitudinal angle θ and azimuthal angle φ for both incoming and outgoing ray.
+Then it calculates the transmittance angles of the incoming rays,θt and φt, to calculate the distance the ray travels inside the hair before it exits. The angles are used to measure the distances in the azimuthal and longitudinal planes and are going to be used to compute the transmittance T of a single path through the hair. All this coordinates are going to be used to calculate Ap.
+It then evaluates the hair BSDF. It first calculaes the angle θ and then the ap term. Then it computes sin θo and cos θo taking into consideration hair scales, making the appropriate rotations, over the various p terms.
+In fsum, it calculates the hair bsdf over the terms p, taking into account the different terms Mp, Ap and Np.
+
+#### sample_hair()
+
+## Performances
+
+All the images were rendered on a MacBook Pro with a processor 2,6 GHz Intel Core i5 and 4 cores, and a RAM of 8 GB.
+The images with five different models of hair and colors were rendered with 4096 samples at a resolution of 720 pixels, and and had execution times of ~83 minutes.
+The images of the single hair model with different colors, βm and βn were rendered with 1024 samples at a resolution of 1280 pixels, and had execution times of ~26 minutes.
+
+## Results
