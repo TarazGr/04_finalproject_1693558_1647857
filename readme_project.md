@@ -107,6 +107,10 @@ The pdf is finally obtained by summing the above formula over all the p terms.
 
 Both the sampled direction and the corresponding pdf are returned by the function as a pair. 
 
+
+### Integration with our pathtracer
+The final step of the implementation here is integrating the routines defined above in our pathtracer. We run our routines only if we intersect a shape made of lines. We use the ```sample_hair()``` method to sample the new incoming direction, and also save the corresponding pdf. We then adjust the "weight" of our path multiplying it by the sum of the evaluated brdfcos of our pathtracer and values evaluated by our ```eval_hair()``` method, divided by the sum of the two corresponding pdfs (our hair pdf computed by ```sample_hair()``` and the pdf of the brdfcos computed by ```sample_brdfcos_pdf()```. The rest of the implementation of the pathtracer is left unvaried, and the inputs are the standard ones, with the "bsdf" input being the value computed by the ```hair_bsdf``` function.
+
 ## Performances
 
 All the images were rendered on a MacBook Pro with a 2,6 GHz Intel Core i5 processor with 4 cores. 
@@ -173,4 +177,6 @@ The parameters used were the following:
 
 
 ## Comments and conclusions
-
+Overall, our implementation is surely not the best and our results are substandard, but part of the implementation seems to work correctly. In particular, varying input parameters (such as βm and βn) give the expected changes in images, and the colors computed are entirely correct as given in input. 
+Another thing to note is our implementation converges slowly, but we have been unable to tell what this is due to (probably sampling).
+With slight changes and improvements the model could very well give better and more realistic results, but these were the best we were able to obtain in the timeframe.  
