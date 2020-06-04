@@ -117,7 +117,7 @@ The images of the single hair model with different colors, βm and βn were rend
 ## Results
 
 #### Scene
-The first scene depicts five different hair models with five different colors, both human models and hairballs.
+The first scene depicts five different hair models with five different colors, using both human hair models and hairballs.
 It was rendered with 4096 samples at a resolution of 720 pixels.
 
 The parameters used were the following:
