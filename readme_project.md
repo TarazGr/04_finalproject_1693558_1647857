@@ -121,7 +121,6 @@ The first scene depicts five different hair models with five different colors, b
 It was rendered with 4096 samples at a resolution of 720 pixels.
 
 The parameters used were the following:
-
 - eta     = 1.55f;
 - beta_m  = 0.05f;
 - beta_n  = 0.40f;
@@ -134,7 +133,6 @@ These images depicts the same hair model representing straight hair with three d
 They were rendered with 1024 samples at a resolution of 1280 pixels.
 
 The parameters used were the following:
-
 - eta     = 1.55f;
 - beta_m  = 0.05f;
 - beta_n  = 0.40f;
@@ -162,6 +160,12 @@ The parameters used were the following:
 
 These images depicts the same hair model and same colors as before, but with an increased azithmutal roughness βn. As expected, the hair appear brighter and it lightens.
 They were rendered with 1024 samples at a resolution of 1280 pixels.
+
+The parameters used were the following:
+- eta     = 1.55f;
+- beta_m  = 0.05f;
+- beta_n  = 0.50f;
+- alpha   = 2.00f;
 
 ![alt text](./Results/blonde_betam005_betan05_1024s_1280.jpg)
 ![alt text](./Results/brown_betam005_betan05_1024s_1280.jpg)
