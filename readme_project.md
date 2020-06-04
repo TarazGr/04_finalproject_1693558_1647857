@@ -2,8 +2,10 @@
 - Veronica Birindelli - 1647857
 - Gabriel Radu Taranciuc - 1693558
 
-In this project we integrated new functionalities into yocto_pathtrace, implementing a hair scattering model based on the implementation described by Matt Pharr in prbt (https://www.pbrt.org/hair.pdf).
-Some details that were omitted in the paper were instead taken from their source code (https://github.com/mmp/pbrt-v3).
+In this project we integrated new functionalities into yocto_pathtrace, implementing a hair scattering model based on the implementation described by Matt Pharr in [pbrt](https://www.pbrt.org/hair.pdf).
+Some details that were omitted in the paper were instead taken from their [source code](https://github.com/mmp/pbrt-v3).
+
+Our implementation can also be found on github [here](https://github.com/TarazGr/04_finalproject_1693558_1647857). 
 
 ## Theory background
 
@@ -180,3 +182,5 @@ The parameters used were the following:
 Overall, our implementation is not the best and our results are substandard, but part of the implementation seems to work correctly. In particular, varying input parameters (such as βm and βn) give the expected changes in images, and the colors computed are entirely correct as given in input. 
 The major weakness in our implementation is that it converges slowly, but we have been unable to tell what is this due to, altought we suspect there might be shortcomings in our sampling implementation.
 With slight changes and improvements the model could nonetheless give better and more realistic results, but these were the best ones we were able to obtain within the given timeframe.  
+
+
