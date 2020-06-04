@@ -177,6 +177,6 @@ The parameters used were the following:
 
 
 ## Comments and conclusions
-Overall, our implementation is surely not the best and our results are substandard, but part of the implementation seems to work correctly. In particular, varying input parameters (such as βm and βn) give the expected changes in images, and the colors computed are entirely correct as given in input. 
-Another thing to note is our implementation converges slowly, but we have been unable to tell what this is due to (probably sampling).
-With slight changes and improvements the model could very well give better and more realistic results, but these were the best we were able to obtain in the timeframe.  
+Overall, our implementation is not the best and our results are substandard, but part of the implementation seems to work correctly. In particular, varying input parameters (such as βm and βn) give the expected changes in images, and the colors computed are entirely correct as given in input. 
+The major weakness in our implementation is that it converges slowly, but we have been unable to tell what is this due to, altought we suspect there might be shortcomings in our sampling implementation.
+With slight changes and improvements the model could nonetheless give better and more realistic results, but these were the best ones we were able to obtain within the given timeframe.  
