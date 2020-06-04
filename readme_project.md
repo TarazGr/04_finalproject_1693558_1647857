@@ -28,3 +28,32 @@ The parameter p measures the number of path segments that light arriving at the 
 
 The hair BSDF (in the code denoted by fsum) will be written as a sum over the p-terms. It will also be divided into terms that depend only on angles θ or φ (the latter is given by φo-φi): Mp(θo,θi), the longitudinal scattering function; Ap(ωo), the attenuation function; and Np(φ), the azimuthal scattering function. 
 In the implementation just the first few terms of the sum are calculated explicitly, all the higher-order terms will be represented by a single term. The constant Pmax will control exacty how many therms there will be before switching over. As the paper suggested, we used a Pmax value of 3.
+
+## Implementation
+
+The model implemented is parametrized by 6 values. In our code, they are all saved in a data structured called ``` struct hair{} ```, defined in the file yocto_extention.h. All these values are either hard-coded or calculated in the method ```hair_bsdf()``` in yocto_extention.cpp.
+The parameters are the following:
+
+•h: which gives the offset on curve width where the ray intersected the hair, it's defined on the interval[−1,1]. In our implementation, is calculated in ```hair_bsdf()```.
+•eta: which gives the index of refraction of the interior of the hair. It's hard-coded with the value advised by the paper, which was 1.55. 
+•beta_m: the longitudinal roughness of the hair, in the range [0, 1]. It's hard-coded with various values. We chose 0.125 for high roughness, and 0.05 for low roughness.
+•beta_n: the azimuthal roughness, also in the range [0, 1]. It's hard-coded with the value of 0.4.
+•alpha: the angle that hair scales form with the base cylinder, expressed in degrees. We used the value suggested in the paper, which was 2.
+•sigma_a: the absorption coefficient of the hair interior. This value is actually computed with the method ```SigmaAFromReflectance()``` that is described in the paper. The method takes a color and the parameter beta_n as inputs, and gives the correct absorption coefficient. It is found in yocto_extension.h
+
+We also implemented the general utility functions described in the paper. In particular, we implemented ```Pow()``` a function to efficiently calculate powers using tampletes, and ``` SafeAsin ``` and ``` SafeSqrt``` to comput the sine and the square root even when the numbers are slightly out of range due to round-off errors. All these methods are implemented in yocto_extension.h.
+
+We also implemented the three main functions used to calculate the hair BSDF, namely Mp, Ap and Np. All these methods are found in yocto_extension.cpp
+
+#### LONGITUDINAL SCATTERING: Mp
+This function implements the model developed by d'Eon et al. It provides a scattering function that is normalized and can be sampled directly. It is based on various terms, angonst them there is the modified Bessel function of the first kind Io. Since this function is not numerically stable for low roughness values (meaning low v values), for v <= 0.1 the log(Io) is used instead. Both are defined in the ```IO() ``` and ``` LogIO()``` in yocto_extension.h
+
+#### ABSORPTION IN FIBERS: Ap
+This function calculates how much of the incident light is affected by each of the scattering modes p. It takes into account two effects, the Fresnel reflection and transmission, and the absorption of light - which is what gives hair its color. 
+It takes in input a single segment's transmittance T, the longitudinal angle of the outgoing ray θo, and computes the attenuation for the various terms. For the first term with p=0, which corresponds at the light reflected at the cuticle, the Fresnel reflectance is used to give the fraction of light that is reflected. For the second term with p=1, two (1-f) terms must be taken into account, corresponding to the two transmissions in and out the hair boundary, and a single T for one transmission path traversing the inside of the hair. Each term from p=2 up until pMax has one reflection and one tranmission event more than its predecessor. For higher order terms a closed form of the sum of the infinte terms of the series is used. 
+
+#### AZIMUTHAL SCATTERING: Np
+This function calculates the component of scattering that is dependent on the angle φ, meaning that works entirely on the normal plane.
+The new azimuthal direction si calculated assuming a perfect specular reflection and transmission, and then defining a distribution of directions around this central direction. Increasing azimuthal roughness βn gives a wider distribution. This can be approximated by a logistic distribution.
+A function φ(p, h) computes the net change in this azhimutal direction, given a certain p and h.
+Np function therefore computes the angular difference between φ and φ(p, h), and evaluate the azimuthal distribution with that angle. Since this different can be outside the range of the logistic function that is defined on, they rotate this difference around the circle to get the right range. 
