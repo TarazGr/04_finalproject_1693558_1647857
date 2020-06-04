@@ -291,7 +291,7 @@ std::pair<vec3f, float> sample_hair(const hair& bsdf, const vec3f& normal,
   // Compute PDF for sampled hair scattering direction wi
   auto pdf = 0.0f;
   for (auto p = 0; p < pMax; p++) {
-    // Compute sin θi and cos θi terms accounting for scales
+    // Compute sin θo and cos θo terms accounting for scales
     float sinThetaOp, cosThetaOp;
     if (p == 0) {
       sinThetaOp = sinThetaO * bsdf.cos2kAlpha.y -
