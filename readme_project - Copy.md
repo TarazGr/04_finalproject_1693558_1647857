@@ -1,5 +1,5 @@
 # Hair Shading
-- Veronica Birindelli, 1647857
+- Veronica Birindelli - 1647857
 - Gabriel Radu Taranciuc - 1693558
 
 In this project we integrated new functionalities into yocto_pathtrace, implementing a hair scattering model based on the implementation described by Matt Pharr in prbt (https://www.pbrt.org/hair.pdf).
@@ -30,7 +30,7 @@ In the implementation just the first few terms of the sum are calculated explici
 
 ## Implementation
 
-The model implemented is parametrized by 6 values. In our code, they are all saved in a data structured called ``` struct hair{} ```, defined in the file yocto_extention.h. All these values are either hard-coded or calculated in the method ```hair_bsdf()``` in yocto_extention.cpp.
+The model implemented is parametrized by 6 values. In our code, they are all saved in a data structure called ``` struct hair{} ```, defined in the file yocto_extention.h. All these values are either hard-coded or calculated in the method ```hair_bsdf()``` in yocto_extention.cpp.
 The parameters are the following:
 
 - h: which gives the offset on curve width where the ray intersected the hair, it's defined on the interval [−1, 1]. In our implementation, is calculated in ```hair_bsdf()```.
@@ -60,22 +60,52 @@ The Np function therefore computes the angular difference between φ and φ(p, h
 
 Finally, we show how these functions were used to evaluate the hair bsdf. We'll describe two functions, ``` hair_bsdf()``` which sets the parameters that are going to be used in the various computations, and ```eval_hair()``` which evaluates the bsdf parameters.
 
-#### hair_bsdf()
+### hair_bsdf()
 At first, this function sets the parameters, initializing the hair data.
 It then computes the longitudinal roughness v for the various p terms according to the given parameter βm. Higher values of βm give the hair a more "dry" and "ruined" look and a more diffuse appearence. At low values of βm the hair appears shinier.
 
 It then computes the azimuthal logistic scale factor from βn. For higher values of βn the hair lightens, as more multiply-scattered lights can exit.
 
-It then computes the α terms for hair scales, that are going to be used for adjustments for the θo terms in the ```eval_hair()``` function.
+It then computes the α terms for hair scales, that are going to be used for adjustments for the θo terms in the ```eval_hair()``` function. The first α term is nothing other then the sine and the cosine of the angle given in input, while the other terms are the preceding value multiplied by 2. 
 
 ### eval_hair()
+Here we implement the overall evaluation given outgoing and incoming rays, using the formula: 
+
+	(Mp(θo, θi) * Ap(ωo) * Np(φ))/(|cos θi|)
+
+to compute each p term of the evaluation. Here ωo is the outgoing direction given in input. 
+The complete evaluation is then given by the sum over all p terms for the above formula. Below is a more step-by-step of the phases before the above computations. 
+
 This function first evaluates the coordinates of the longitudinal angle θ and azimuthal angle φ for both incoming and outgoing ray.
 Then it calculates the transmittance angles of the incoming rays, θt and φt, to calculate the distance the ray travels inside the hair before it exits. The angles are used to measure the distances in the azimuthal and longitudinal planes and are going to be used to compute the transmittance T of a single path through the hair. All this coordinates are going to be used to calculate Ap.
 
-It then evaluates the hair BSDF by first calculating the angle θ and then the Ap term. Then it computes sin θo and cos θo taking into account hair scales, making the appropriate rotations, over the various p terms.
-In fsum, it calculates the hair bsdf over the terms p, taking into account the different terms Mp, Ap and Np.
+It then evaluates the hair BSDF by first calculating the angle θ and then the Ap term. Then it computes sin θo and cos θo taking into account hair scales, making the appropriate rotations, over the various p terms. This is donw using the formula: 
 
-#### sample_hair()
+	sin θ ± α = sin θ cos α ± cos θ sin α
+	cos θ ± α = cos θ cos α ∓ sin θ sin α
+
+Where the α terms are 2α for p = 0, -α for p = 1, and -4α for p = 2. 
+
+Finally, in fsum, we accumulate what is given in the formula mentioned at the beginning of this section, summing over all p terms. 
+
+
+### sample_hair()
+Samples are genenrated with a 2-step process. First a p term is chosen to sample according to a probability based on each therm's Ap function value, and then finds a direction, sampling the corrisponding Mp and Np samples.
+First the method computes the hair coordinate system terms related to the outgoing ray. Then it generates a total of four random samples, extracting two separate samples from each provided sample, using the ```DemuxFloat()``` and ``` Compact1By1()``` functions. 
+It then calls the function ```ComputeApPDf()``` which, given θo, returns a discrete PDF with probabilities for sampling each term Ap according to its contribution relative to all of the Ap terms. 
+
+Then given these PDF over Ap terms, it loops over them until it finds the first value of p where the sum of preceding PDF values is greater than the sampled value.
+It then samples Mp to compute θo. It first initializes variables sinThetaOp and cosThetaOp and rotates them according to the p values to account for scales, and then it calculates variables sinThetaI and cosThetaI according to the results obtained, given sample values u[1].x and u[1].y.
+Then it samples Np, taking samples using the logistic distribution and exit direction for terms up to pmax. For the last term, it samples from a uniform distribution.
+Afterwards, it computes the incoming direction wi from sampled hair scattering angles θi and φi, constructing the corresponding vec3f. 
+
+Finally, the PDF for sampled hair scattering direction wi is computed, taking into account p terms and hair scales, according to the formula: 
+
+	Mp(θo, θi)A˜p(ωo)Np(φ)
+
+The pdf is finally obtained by summing the above formula over all the p terms. 
+
+Both the sampled direction and the corresponding pdf are returned by the function as a pair. 
 
 ## Performances
 
