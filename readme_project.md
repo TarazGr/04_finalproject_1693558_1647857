@@ -129,7 +129,7 @@ The parameters used were the following:
 ![alt text](./Results/hair_scene_betam005_betan004_4096s_720r.png)
 
 #### Different hair colors on the same hair model
-These images depicts the same hair model representing straight hair with three different colors of varying absorption coefficients, which were given in input as RGB colors.
+These images depict the same hair model representing straight hair, with three different colors of varying absorption coefficients, which were given in input as RGB colors.
 They were rendered with 1024 samples at a resolution of 1280 pixels.
 
 The parameters used were the following:
@@ -143,13 +143,13 @@ The parameters used were the following:
 ![alt text](./Results/dark_betam005_betan04_1024s_1280.jpg)
 #### Varying longitudinal roughness βm
 
-These images depicts the same hair model and same colors as before, but with an increased longitudinal roughness βm. As expected, the hair appear more diffuse and "dry".
+These images depicts the same hair model and same colors as before, but with an increased longitudinal roughness βm. As expected, the hairs appear more diffuse and "dry".
 They were rendered with 1024 samples at a resolution of 1280 pixels.
 
 The parameters used were the following:
 - eta     = 1.55f;
 - beta_m  = 0.125f;
-- beta_n  = 0.30f;
+- beta_n  = 0.40f;
 - alpha   = 2.00f;
 
 ![alt text](./Results/blonde.jpg)
@@ -158,7 +158,7 @@ The parameters used were the following:
 
 #### Varying azithmutal roughness βn
 
-These images depicts the same hair model and same colors as before, but with an increased azithmutal roughness βn. As expected, the hair appear brighter and it lightens.
+These images depict the same hair model with the same colors as before, but with an increased azithmutal roughness βn (while again using the same βm as the first example). As expected, the hairs appear brighter. 
 They were rendered with 1024 samples at a resolution of 1280 pixels.
 
 The parameters used were the following:
